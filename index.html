@@ -1,0 +1,2436 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>MOLLY 绘色游园会</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=ZCOOL+KuaiLe&display=swap');
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        :root {
+            --cream: #FFF9F0;
+            --crayon-orange: #E8775A;
+            --crayon-teal: #5BAEA0;
+            --crayon-yellow: #F2C94C;
+            --crayon-lavender: #9B8EC7;
+            --crayon-pink: #E8A0B8;
+            --paper: #FFF9F0;
+            --shadow: rgba(88, 60, 40, 0.12);
+            /* 7个Molly专属色 */
+            --molly-0: #8BC34A;   /* 春芽-嫩绿 */
+            --molly-1: #4FC3F7;   /* 青青-天蓝 */
+            --molly-2: #A1887F;   /* 达棕-暖棕 */
+            --molly-3: #F48FB1;   /* 花花-粉色 */
+            --molly-4: #CE93D8;   /* 甜梦-淡紫 */
+            --molly-5: #EF5350;   /* 毕红-正红 */
+            --molly-6: #FFB74D;   /* 彩虹-橙金 */
+        }
+
+        html, body {
+            width: 100%; height: 100%;
+            overflow: hidden;
+            background: var(--paper);
+            font-family: 'ZCOOL KuaiLe', cursive, sans-serif;
+            -webkit-tap-highlight-color: transparent;
+            touch-action: manipulation;
+        }
+
+        /* ========== 页面容器 ========== */
+        .page {
+            position: fixed; inset: 0;
+            width: 100%; height: 100%;
+            overflow: hidden;
+            display: none;
+            opacity: 0;
+            transition: opacity 0.5s ease;
+        }
+        .page.active {
+            display: flex;
+            opacity: 1;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        /* ========== 彩铅纹理背景 ========== */
+        .paper-bg {
+            position: absolute; inset: 0;
+            background: var(--paper);
+            z-index: 0;
+            pointer-events: none;
+        }
+        .paper-bg::before {
+            content: '';
+            position: absolute; inset: 0;
+            background:
+                radial-gradient(circle at 20% 30%, rgba(232,119,90,0.06) 0%, transparent 40%),
+                radial-gradient(circle at 80% 70%, rgba(91,174,160,0.06) 0%, transparent 40%),
+                radial-gradient(circle at 50% 50%, rgba(242,201,76,0.04) 0%, transparent 50%);
+        }
+        .scribble {
+            position: absolute; pointer-events: none;
+            opacity: 0.15;
+        }
+        .scribble.s1 { top: 5%; left: 5%; width: 80px; height: 80px; border: 3px dashed var(--crayon-orange); border-radius: 50%; transform: rotate(20deg); animation: scribSpin 8s linear infinite; }
+        .scribble.s2 { top: 60%; right: 8%; width: 60px; height: 60px; background: var(--crayon-teal); border-radius: 30% 70% 70% 30% / 30% 30% 70% 70%; transform: rotate(-15deg); animation: scribFloat 4s ease-in-out infinite; }
+        .scribble.s3 { bottom: 15%; left: 10%; width: 40px; height: 40px; border: 3px solid var(--crayon-yellow); transform: rotate(45deg); animation: scribPulse 3s ease-in-out infinite; }
+        .scribble.s4 { top: 30%; right: 15%; width: 50px; height: 50px; border-radius: 50%; border: 2px dashed var(--crayon-lavender); animation: scribSpin 6s linear infinite reverse; }
+        .scribble.s5 { bottom: 40%; left: 20%; width: 70px; height: 4px; background: var(--crayon-pink); border-radius: 2px; transform: rotate(-5deg); animation: scribFloat 5s ease-in-out infinite 1s; }
+        @keyframes scribSpin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+        @keyframes scribFloat { 0%,100% { transform: translateY(0) rotate(-15deg); } 50% { transform: translateY(-10px) rotate(-10deg); } }
+        @keyframes scribPulse { 0%,100% { transform: rotate(45deg) scale(1); opacity: 0.15; } 50% { transform: rotate(45deg) scale(1.2); opacity: 0.25; } }
+
+        /* ========== 全局浮动涂鸦 (POP MART 风) ========== */
+        .pm-deco-layer {
+            position: absolute; inset: 0;
+            pointer-events: none;
+            z-index: 0;
+            overflow: hidden;
+        }
+        .pm-star {
+            position: absolute;
+            animation: pmFloat var(--dur, 4s) ease-in-out infinite var(--delay, 0s);
+            opacity: var(--op, 0.25);
+            font-size: var(--fs, 16px);
+        }
+        .pm-heart {
+            position: absolute;
+            animation: pmPulse var(--dur, 3s) ease-in-out infinite var(--delay, 0s);
+            opacity: var(--op, 0.2);
+            font-size: var(--fs, 14px);
+        }
+        .pm-dot {
+            position: absolute;
+            width: var(--sz, 8px); height: var(--sz, 8px);
+            border-radius: 50%;
+            background: var(--col, #F2C94C);
+            animation: pmDotPop var(--dur, 5s) ease-in-out infinite var(--delay, 0s);
+            opacity: var(--op, 0.3);
+        }
+        .pm-ring {
+            position: absolute;
+            width: var(--sz, 30px); height: var(--sz, 30px);
+            border-radius: 50%;
+            border: 2px solid var(--col, #E8A0B8);
+            animation: pmSpin var(--dur, 8s) linear infinite var(--delay, 0s);
+            opacity: var(--op, 0.2);
+        }
+        @keyframes pmFloat { 0%,100%{transform:translateY(0) rotate(0deg);} 50%{transform:translateY(-14px) rotate(8deg);} }
+        @keyframes pmPulse { 0%,100%{transform:scale(1);opacity:var(--op,0.2);} 50%{transform:scale(1.4);opacity:calc(var(--op,0.2)*1.8);} }
+        @keyframes pmDotPop { 0%,100%{transform:scale(1) translateY(0);} 40%{transform:scale(1.3) translateY(-8px);} }
+        @keyframes pmSpin { from{transform:rotate(0deg);} to{transform:rotate(360deg);} }
+        /* 左上角导航栏（箭头 + LOGO） */
+        .top-bar {
+            position: fixed;
+            top: 14px; left: 12px;
+            z-index: 999;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .top-bar .back-btn {
+            position: static;
+            width: 34px; height: 34px;
+            background: none;
+            border: none;
+            display: flex; align-items: center; justify-content: center;
+            cursor: pointer;
+            transition: opacity 0.2s ease, transform 0.15s ease;
+            padding: 0;
+            flex-shrink: 0;
+        }
+        .top-bar .back-btn:active { transform: scale(0.88); }
+        .top-bar .back-btn svg { width: 28px; height: 28px; stroke: var(--crayon-orange); stroke-width: 2.5; fill: none; stroke-linecap: round; stroke-linejoin: round; }
+        .top-bar .back-btn.hidden { display: none !important; }
+
+        /* POP MART 徽标 */
+        .logo-popmart {
+            background: #D84030;
+            color: #fff;
+            font-family: 'Arial Black', 'Impact', sans-serif;
+            font-size: 13px;
+            font-weight: 900;
+            letter-spacing: 1px;
+            padding: 3px 7px;
+            border-radius: 3px;
+            line-height: 1.3;
+            white-space: nowrap;
+            user-select: none;
+            flex-shrink: 0;
+        }
+
+        /* Molly 文字 */
+        .logo-molly {
+            color: #222;
+            font-family: Arial, Helvetica, sans-serif;
+            font-weight: 800;
+            font-size: 22px;
+            line-height: 1;
+            white-space: nowrap;
+            letter-spacing: -0.02em;
+            user-select: none;
+        }
+
+        /* ========== 封面页 ========== */
+        #cover.page.active {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-end;
+        }
+        .cover-wrap {
+            width: 100%; height: 100%;
+            position: relative;
+            z-index: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-end;
+        }
+        .cover-frame {
+            position: absolute;
+            inset: 0;
+            overflow: hidden;
+            cursor: pointer;
+            animation: coverFloat 3s ease-in-out infinite;
+        }
+        @keyframes coverFloat {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.012); }
+        }
+        .cover-frame:active { transform: scale(0.99); }
+        .cover-frame img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+        }
+        /* 封面底部渐变遮罩，让提示文字可读 */
+        .cover-frame::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(to bottom, transparent 50%, rgba(0,0,0,0.35) 100%);
+            pointer-events: none;
+        }
+        .cover-tap-hint {
+            position: relative;
+            z-index: 2;
+            margin-bottom: 8%;
+            color: #fff;
+            font-size: 15px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            animation: tapPulse 1.5s ease-in-out infinite;
+            text-shadow: 0 2px 8px rgba(0,0,0,0.5);
+        }
+        @keyframes tapPulse {
+            0%, 100% { opacity: 0.75; transform: translateY(0); }
+            50% { opacity: 1; transform: translateY(-5px); }
+        }
+        .cover-tap-hint svg { width: 20px; height: 20px; fill: #fff; }
+
+        /* 封面浮动涂鸦装饰 */
+        .cover-deco {
+            position: absolute;
+            pointer-events: none;
+            z-index: 3;
+        }
+        .cover-deco.d1 {
+            top: 12%; left: 6%;
+            width: 38px; height: 38px;
+            border: 2.5px solid rgba(255,220,100,0.85);
+            border-radius: 50%;
+            animation: decoSpin 6s linear infinite;
+        }
+        .cover-deco.d2 {
+            top: 8%; right: 8%;
+            width: 28px; height: 28px;
+            border: 2.5px dashed rgba(255,150,180,0.8);
+            border-radius: 30% 70% 60% 40%;
+            animation: decoFloat 4s ease-in-out infinite;
+        }
+        .cover-deco.d3 {
+            bottom: 28%; left: 5%;
+            width: 22px; height: 22px;
+            background: rgba(100,220,210,0.6);
+            border-radius: 50%;
+            animation: decoPulse 3s ease-in-out infinite;
+        }
+        .cover-deco.d4 {
+            bottom: 32%; right: 6%;
+            width: 16px; height: 16px;
+            border: 2px solid rgba(255,180,80,0.9);
+            transform: rotate(45deg);
+            animation: decoSpin 8s linear infinite reverse;
+        }
+        .cover-deco.d5 {
+            top: 35%; left: 4%;
+            font-size: 18px;
+            animation: decoFloat 5s ease-in-out infinite 0.5s;
+            opacity: 0.7;
+        }
+        .cover-deco.d6 {
+            top: 30%; right: 5%;
+            font-size: 15px;
+            animation: decoPulse 4s ease-in-out infinite 1s;
+            opacity: 0.7;
+        }
+        .cover-deco.d7 {
+            bottom: 38%; left: 50%;
+            transform: translateX(-50%);
+            font-size: 14px;
+            animation: decoFloat 3.5s ease-in-out infinite 0.8s;
+            opacity: 0.65;
+        }
+        @keyframes decoSpin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+        @keyframes decoFloat { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-12px); } }
+        @keyframes decoPulse { 0%,100% { transform: scale(1); opacity: 0.6; } 50% { transform: scale(1.3); opacity: 0.9; } }
+
+        /* ========== 标题区 ========== */
+.page-title {
+    font-size: 30px;
+    color: var(--crayon-orange);
+    text-align: center;
+    margin-top: 60px;
+    margin-bottom: 8px;
+            text-shadow: 2px 2px 0 rgba(255,255,255,0.9), -1px -1px 0 rgba(232,119,90,0.1);
+            position: relative;
+            z-index: 2;
+        }
+.page-subtitle {
+    font-size: 16px;
+            color: #888;
+            text-align: center;
+            margin-bottom: 16px;
+            position: relative;
+            z-index: 2;
+        }
+
+        /* ========== 选择页 Molly 专属气泡 ========== */
+        .selector-bubble {
+            position: fixed;
+            /* 位置由JS动态设置（人物右上方）*/
+            background: #fff;
+            border: 2.5px solid var(--molly-bubble-color, var(--crayon-orange));
+            padding: 12px 18px;
+            font-size: 18px;
+            color: #444;
+            max-width: 280px;
+            white-space: normal;
+            text-align: center;
+            z-index: 50;
+            box-shadow: 3px 3px 0 var(--molly-bubble-shadow, rgba(232,119,90,0.2));
+            opacity: 0;
+            pointer-events: none;
+            transform: scale(0.8) translateY(8px);
+            transition: opacity 0.28s ease, transform 0.28s cubic-bezier(0.34,1.56,0.64,1);
+            /* 默认形状，JS会设置data-shape */
+            border-radius: 18px 18px 18px 4px;
+        }
+        .selector-bubble.show {
+            opacity: 1;
+            transform: scale(1) translateY(0);
+        }
+
+        /* 气泡小尾巴（不同朝向由JS控制class） */
+        .selector-bubble::after {
+            content: '';
+            position: absolute;
+            border: 6px solid transparent;
+        }
+        /* 尾巴朝左下（右上方气泡指向左下角人物方向） */
+        .selector-bubble.tail-bl::after {
+            bottom: -12px;
+            left: 16px;
+            border-top-color: var(--molly-bubble-color, var(--crayon-orange));
+            border-bottom: none;
+        }
+
+        /* ====== 每个Molly专属气泡形状 ====== */
+        /* 0:春芽 —— 嫩芽形：左上圆弧大，右下尖 */
+        .selector-bubble[data-shape="0"] {
+            border-radius: 40% 60% 50% 20% / 50% 40% 60% 20%;
+        }
+        /* 1:青青 —— 云朵形：全圆鼓鼓的 */
+        .selector-bubble[data-shape="1"] {
+            border-radius: 50% 50% 45% 45% / 60% 60% 40% 40%;
+        }
+        /* 2:达棕 —— 方正印章形：只有小圆角 */
+        .selector-bubble[data-shape="2"] {
+            border-radius: 6px 6px 6px 2px;
+        }
+        /* 3:花花 —— 花瓣形：四角都向外圆鼓 */
+        .selector-bubble[data-shape="3"] {
+            border-radius: 50% 30% 50% 30% / 30% 50% 30% 50%;
+        }
+        /* 4:甜梦 —— 睡帽形：顶部宽圆，底部收窄 */
+        .selector-bubble[data-shape="4"] {
+            border-radius: 50% 50% 30% 30% / 70% 70% 30% 30%;
+        }
+        /* 5:毕红 —— 尖角爆炸形：用多边形近似 */
+        .selector-bubble[data-shape="5"] {
+            border-radius: 30% 70% 70% 30% / 30% 30% 70% 70%;
+        }
+        /* 6:彩虹 —— 半弧彩虹形：上圆下直 */
+        .selector-bubble[data-shape="6"] {
+            border-radius: 60% 60% 20% 20% / 80% 80% 20% 20%;
+        }
+
+        /* ========== 角色选择器 ========== */
+        .selector-wrap {
+            flex: 1;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            overflow: hidden;
+            z-index: 2;
+            min-height: 0;
+        }
+
+        .carousel-stage {
+            width: 100%;
+            height: 65vh;
+            min-height: 400px;
+            max-height: 620px;
+            position: relative;
+            display: flex;
+            align-items: flex-end;
+            justify-content: center;
+            perspective: 800px;
+            overflow: hidden;
+            touch-action: pan-y;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        .carousel-track {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: flex-end;
+            justify-content: center;
+            transform-style: preserve-3d;
+            transition: transform 0.4s cubic-bezier(0.23, 1, 0.32, 1);
+        }
+
+        .molly-card {
+            position: absolute;
+            bottom: 5%;
+            width: 280px;
+            height: 460px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-end;
+            cursor: pointer;
+            transition: all 0.45s cubic-bezier(0.23, 1, 0.32, 1);
+            transform-origin: center bottom;
+            -webkit-tap-highlight-color: transparent;
+            user-select: none;
+        }
+
+        /* 呼吸浮动动画 - 只给中间的Molly */
+        .molly-card.is-center .molly-img-wrap {
+            animation: breathe 2.8s ease-in-out infinite;
+        }
+        @keyframes breathe {
+            0%, 100% { transform: translateY(0) rotate(0deg); }
+            50% { transform: translateY(-6px) rotate(0.3deg); }
+        }
+
+        /* 眨眼动画 */
+        .molly-card.is-center .molly-img-wrap img {
+            animation: gentleWiggle 4s ease-in-out infinite;
+        }
+        @keyframes gentleWiggle {
+            0%, 92%, 100% { transform: rotate(0deg); }
+            94% { transform: rotate(-1deg); }
+            96% { transform: rotate(1deg); }
+            98% { transform: rotate(0deg); }
+        }
+
+        .molly-img-wrap {
+            position: relative;
+            width: 100%;
+            height: 390px;
+            display: flex;
+            align-items: flex-end;
+            justify-content: center;
+        }
+
+        .molly-img-wrap img {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+            filter: drop-shadow(0 6px 12px rgba(0,0,0,0.12));
+            transition: filter 0.3s ease;
+            pointer-events: none;
+        }
+
+.molly-name {
+    margin-top: 8px;
+    font-size: 16px;
+            color: #666;
+            background: rgba(255,255,255,0.85);
+            padding: 4px 14px;
+            border-radius: 20px;
+            border: 2px solid transparent;
+            transition: all 0.3s ease;
+            white-space: nowrap;
+            pointer-events: none;
+        }
+
+        /* 选中状态 */
+        .molly-card.selected .molly-img-wrap img {
+            filter: drop-shadow(0 0 0 3px var(--crayon-orange)) drop-shadow(0 6px 16px rgba(232,119,90,0.3));
+        }
+        .molly-card.selected .molly-name {
+            border-color: var(--crayon-orange);
+            color: var(--crayon-orange);
+            background: rgba(255,255,255,0.95);
+            font-weight: bold;
+            box-shadow: 0 2px 8px rgba(232,119,90,0.2);
+        }
+
+        /* 选中勾选标记 */
+        .molly-check {
+            position: absolute;
+            top: 0; right: 10px;
+            width: 32px; height: 32px;
+            background: var(--crayon-orange);
+            border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            opacity: 0;
+            transform: scale(0);
+            transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+            z-index: 5;
+            box-shadow: 0 2px 8px rgba(232,119,90,0.4);
+        }
+        .molly-card.selected .molly-check {
+            opacity: 1;
+            transform: scale(1);
+        }
+        .molly-check svg { width: 18px; height: 18px; fill: none; stroke: #fff; stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; }
+
+        /* 选择计数提示 */
+        .selection-bar {
+            width: 100%;
+            padding: 10px 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            position: relative;
+            z-index: 3;
+        }
+        .sel-dots { display: flex; gap: 8px; }
+        .sel-dot {
+            width: 14px; height: 14px;
+            border-radius: 50%;
+            border: 2px solid #ddd;
+            background: #fff;
+            transition: all 0.3s ease;
+        }
+        .sel-dot.filled {
+            background: var(--crayon-orange);
+            border-color: var(--crayon-orange);
+            box-shadow: 0 2px 6px rgba(232,119,90,0.3);
+        }
+.sel-text {
+    font-size: 15px;
+            color: #999;
+        }
+        .sel-count {
+            color: var(--crayon-orange);
+            font-weight: bold;
+        }
+
+        /* 左右提示箭头 */
+        .scroll-hint {
+            position: absolute;
+            bottom: 40%;
+            z-index: 10;
+            width: 36px; height: 36px;
+            display: flex; align-items: center; justify-content: center;
+            background: rgba(255,255,255,0.9);
+            border-radius: 50%;
+            border: 2px solid var(--crayon-orange);
+            opacity: 0.8;
+            pointer-events: auto;
+            cursor: pointer;
+            animation: hintBounce 2s ease-in-out infinite;
+            transition: transform 0.15s ease, background 0.15s ease;
+        }
+        .scroll-hint:active {
+            transform: scale(0.85);
+            background: rgba(255,240,230,1);
+        }
+        .scroll-hint.left { left: 12px; }
+        .scroll-hint.right { right: 12px; animation-delay: 1s; }
+        .scroll-hint svg { width: 18px; height: 18px; stroke: var(--crayon-orange); stroke-width: 3; fill: none; stroke-linecap: round; }
+        @keyframes hintBounce {
+            0%, 100% { transform: translateX(0); opacity: 0.5; }
+            50% { transform: translateX(6px); opacity: 1; }
+        }
+        .scroll-hint.left { animation-name: hintBounceL; }
+        @keyframes hintBounceL {
+            0%, 100% { transform: translateX(0); opacity: 0.5; }
+            50% { transform: translateX(-6px); opacity: 1; }
+        }
+
+        /* 开始按钮 */
+        .start-btn-wrap {
+            position: fixed;
+            bottom: 24px;
+            right: 20px;
+            z-index: 100;
+        }
+        .start-btn {
+            padding: 14px 36px;
+            font-size: 18px;
+            font-family: 'ZCOOL KuaiLe', cursive, sans-serif;
+            border: 3px solid;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+            box-shadow: 4px 4px 0 var(--shadow);
+            letter-spacing: 2px;
+        }
+        .start-btn:disabled {
+            background: #E8E4DE;
+            color: #BBB7B1;
+            border-color: #DDD9D3;
+            cursor: not-allowed;
+            box-shadow: none;
+            transform: none;
+        }
+        .start-btn:not(:disabled) {
+            background: var(--crayon-orange);
+            color: #fff;
+            border-color: #D4684B;
+            box-shadow: 4px 4px 0 rgba(212,104,75,0.3), 0 6px 20px rgba(232,119,90,0.3);
+            animation: btnPop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+        .start-btn:not(:disabled):active {
+            transform: translate(2px, 2px);
+            box-shadow: 2px 2px 0 rgba(212,104,75,0.3);
+        }
+        @keyframes btnPop {
+            0% { transform: scale(0.8); opacity: 0; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        /* 小角色预览 */
+        .selected-preview {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            z-index: 100;
+            display: flex;
+            gap: 4px;
+            align-items: flex-end;
+        }
+        .preview-thumb {
+            width: 40px; height: 40px;
+            border-radius: 50%;
+            overflow: hidden;
+            border: 2px solid var(--crayon-orange);
+            background: #fff;
+            opacity: 0;
+            transform: scale(0);
+            transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+        }
+        .preview-thumb.visible {
+            opacity: 1;
+            transform: scale(1);
+        }
+        .preview-thumb img { width: 100%; height: 100%; object-fit: cover; }
+
+        /* 响应式 */
+        @media (max-width: 380px) {
+            .molly-card { width: 220px; height: 370px; }
+            .molly-img-wrap { height: 310px; }
+            .page-title { font-size: 22px; margin-top: 60px; }
+            .carousel-stage { height: 60vh; min-height: 350px; }
+        }
+        @media (min-width: 500px) {
+            .molly-card { width: 320px; height: 520px; }
+            .molly-img-wrap { height: 440px; }
+            .carousel-stage { height: 70vh; max-height: 680px; }
+        }
+
+        /* ========== 画展页（艺术馆风格） ========== */
+        #gallery.page.active {
+            display: flex;
+            flex-direction: column;
+            background: #F5F0E8;
+            overflow: hidden;
+        }
+
+        /* 全屏场景 */
+        .gallery-scene {
+            position: relative;
+            flex: 1;
+            width: 100%;
+            overflow: hidden;
+        }
+
+        /* 艺术馆墙面 */
+        .wall-bg {
+            position: absolute;
+            inset: 0;
+            background:
+                /* 微妙墙纸纹理 */
+                repeating-linear-gradient(
+                    0deg,
+                    transparent 0, transparent 3px,
+                    rgba(200,190,175,0.04) 3px, rgba(200,190,175,0.04) 4px
+                ),
+                linear-gradient(180deg, #F7F3EC 0%, #F2EDE4 40%, #EDE8DF 100%);
+            z-index: 0;
+        }
+        /* 踢脚线 */
+        .wall-bg::before {
+            display: block;
+            content: '';
+            position: absolute;
+            bottom: 27.5%;
+            left: 0; right: 0;
+            height: 8px;
+            background: linear-gradient(180deg, #C8B99A 0%, #B8A888 40%, #A89A78 100%);
+            box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+            z-index: 1;
+        }
+        /* 墙面暗角（vignette） */
+        .wall-bg::after {
+            display: block;
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: radial-gradient(ellipse at 50% 40%, transparent 40%, rgba(60,45,30,0.12) 100%);
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        /* 画廊木地板 */
+        .floor-bg {
+            position: absolute;
+            bottom: 0; left: 0; right: 0;
+            height: 28%;
+            background:
+                /* 木板条纹 */
+                repeating-linear-gradient(90deg,
+                    rgba(160,140,115,0.22) 0, rgba(160,140,115,0.22) 1px,
+                    transparent 1px, transparent 55px
+                ),
+                repeating-linear-gradient(0deg,
+                    rgba(160,140,115,0.1) 0, rgba(160,140,115,0.1) 1px,
+                    transparent 1px, transparent 180px
+                ),
+                linear-gradient(180deg, #DDD5C8 0%, #D0C8BA 50%, #C8BFAF 100%);
+            z-index: 0;
+        }
+        /* 地板反光 + 地板与墙的阴影过渡 */
+        .floor-bg::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            height: 15%;
+            background: linear-gradient(180deg, rgba(0,0,0,0.06) 0%, transparent 100%);
+        }
+        .floor-bg::after {
+            content: '';
+            position: absolute;
+            top: 15%; left: 5%; right: 5%;
+            height: 25%;
+            background: linear-gradient(180deg, rgba(255,255,255,0.12) 0%, transparent 100%);
+        }
+
+        /* 墙上画作（艺术馆悬挂风格） */
+        .wall-painting {
+            position: absolute;
+            top: 6%;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 3;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            transition: all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+        /* 画作聚光灯效果 */
+        .wall-painting::before {
+            content: '';
+            position: absolute;
+            top: -50px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 410px;
+            height: 440px;
+            background: radial-gradient(ellipse at top, rgba(255,248,220,0.55) 0%, rgba(255,245,200,0.15) 40%, transparent 70%);
+            pointer-events: none;
+            z-index: -1;
+        }
+
+        /* ====== 7种专属精美画框 ====== */
+
+        /* 画框基础（默认/共用） */
+        .wall-painting-frame {
+            width: 340px;
+            height: 300px;
+            max-width: 82vw;
+            background: #2a2a2a;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            overflow: hidden;
+            transition: all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+        .wall-painting-frame img {
+            width: calc(100% - 10px);
+            height: calc(100% - 10px);
+            object-fit: contain;
+            object-position: center;
+            position: relative;
+            z-index: 1;
+        }
+
+        /* 画框0：春芽·珍珠耳环 — 珍珠白雕花古典框 */
+        .wall-painting-frame.frame-0 {
+            border: 5px solid #E8DCC8;
+            border-image: none;
+            box-shadow:
+                0 8px 24px rgba(50,30,5,0.3),
+                0 2px 8px rgba(0,0,0,0.15),
+                inset 0 0 12px rgba(0,0,0,0.25),
+                0 0 0 3px #D4C4A8,
+                0 0 0 6px linear-gradient(135deg, #F5EDDF 0%, #E8D9C0 30%, #F0E5D0 60%, #E5D5B8 100%),
+                0 0 0 10px #C8B896,
+                0 0 0 13px linear-gradient(135deg, #DCCFB5 0%, #C5B498 50%, #D8C8A8 100%),
+                0 0 0 16px #B5A480;
+            background: #1a1a18;
+        }
+        .wall-painting-frame.frame-0::after {
+            content: '';
+            position: absolute;
+            inset: 5px;
+            border: 1.5px solid rgba(212,196,168,0.5);
+            z-index: 2;
+            pointer-events: none;
+            box-shadow: inset 0 0 6px rgba(0,0,0,0.3);
+        }
+
+        /* 画框1：青青·蒙娜丽莎 — 文艺复兴乌金浮雕框 */
+        .wall-painting-frame.frame-1 {
+            border: 4px solid #6B5B3A;
+            box-shadow:
+                0 8px 24px rgba(40,25,5,0.35),
+                0 2px 8px rgba(0,0,0,0.15),
+                inset 0 0 10px rgba(0,0,0,0.35),
+                0 0 0 4px linear-gradient(135deg, #8B7332 0%, #A08940 30%, #7A6528 60%, #9A8340 100%),
+                0 0 0 8px #5E4E1E,
+                0 0 0 11px linear-gradient(135deg, #7A6528 0%, #6B5A2E 50%, #8B7332 100%),
+                0 0 0 15px #4A3E18,
+                0 0 0 18px linear-gradient(135deg, #6B5A2E 0%, #554820 50%, #7A6528 100%),
+                0 0 0 21px #3E3410;
+            background: #1c1c18;
+        }
+        .wall-painting-frame.frame-1::after {
+            content: '';
+            position: absolute;
+            inset: 5px;
+            border: 1px solid rgba(139,115,50,0.6);
+            z-index: 2;
+            pointer-events: none;
+            box-shadow: inset 0 0 8px rgba(0,0,0,0.4);
+        }
+
+        /* 画框2：达棕·摩尔女人 — 摩洛哥几何纹饰铜框 */
+        .wall-painting-frame.frame-2 {
+            border: 4px solid #B87333;
+            box-shadow:
+                0 8px 24px rgba(60,35,10,0.3),
+                0 2px 8px rgba(0,0,0,0.12),
+                inset 0 0 10px rgba(0,0,0,0.25),
+                0 0 0 3px #CD853F,
+                0 0 0 6px linear-gradient(135deg, #D4944A 0%, #C07830 50%, #B87333 100%),
+                0 0 0 9px #8B5E2A,
+                0 0 0 12px #A0682F;
+            background: #1e1a14;
+            border-radius: 2px;
+        }
+        .wall-painting-frame.frame-2::after {
+            content: '';
+            position: absolute;
+            inset: 5px;
+            border: 1.5px solid rgba(184,115,51,0.5);
+            z-index: 2;
+            pointer-events: none;
+            box-shadow: inset 0 0 6px rgba(0,0,0,0.3);
+        }
+
+        /* 画框3：花花·拿破仑 — 帝国风格鎏金华丽框 */
+        .wall-painting-frame.frame-3 {
+            border: 5px solid #DAA520;
+            box-shadow:
+                0 10px 28px rgba(60,30,5,0.4),
+                0 3px 10px rgba(0,0,0,0.18),
+                inset 0 0 12px rgba(0,0,0,0.3),
+                0 0 0 4px linear-gradient(135deg, #FFD700 0%, #DAA520 25%, #B8860B 50%, #FFD700 75%, #DAA520 100%),
+                0 0 0 8px #8B6914,
+                0 0 0 12px linear-gradient(135deg, #DAA520 0%, #CD950C 30%, #B8860B 60%, #DAA520 100%),
+                0 0 0 16px #6B4F12,
+                0 0 0 19px linear-gradient(135deg, #B8860B 0%, #996515 50%, #B8860B 100%),
+                0 0 0 22px #4A360D;
+            background: #181610;
+        }
+        .wall-painting-frame.frame-3::after {
+            content: '';
+            position: absolute;
+            inset: 6px;
+            border: 1px solid rgba(218,165,32,0.7);
+            z-index: 2;
+            pointer-events: none;
+            box-shadow: inset 0 0 8px rgba(0,0,0,0.35);
+        }
+
+        /* 画框4：甜梦·呐喊 — 北欧现代简约黑框 */
+        .wall-painting-frame.frame-4 {
+            border: 3px solid #2C2C2C;
+            box-shadow:
+                0 6px 20px rgba(0,0,0,0.35),
+                0 1px 4px rgba(0,0,0,0.2),
+                inset 0 0 6px rgba(0,0,0,0.2),
+                0 0 0 1px #3A3A3A,
+                0 0 0 3px #1A1A1A,
+                0 0 0 4px #3A3A3A;
+            background: #111;
+            border-radius: 1px;
+        }
+        .wall-painting-frame.frame-4::after {
+            content: '';
+            position: absolute;
+            inset: 4px;
+            border: 1px solid rgba(255,255,255,0.08);
+            z-index: 2;
+            pointer-events: none;
+        }
+
+        /* 画框5：毕红·人类之子 — 超现实艺术流线框 */
+        .wall-painting-frame.frame-5 {
+            border: 4px solid #4A6FA5;
+            box-shadow:
+                0 8px 24px rgba(30,50,80,0.3),
+                0 2px 8px rgba(0,0,0,0.15),
+                inset 0 0 10px rgba(0,0,0,0.25),
+                0 0 0 3px linear-gradient(135deg, #6B8DB5 0%, #4A6FA5 50%, #5A7FB5 100%),
+                0 0 0 7px #3A5A8A,
+                0 0 0 10px linear-gradient(135deg, #5A7FB5 0%, #3A5A8A 50%, #4A6FA5 100%),
+                0 0 0 14px #2A4A7A;
+            background: #f0ece4;
+            border-radius: 3px;
+        }
+        .wall-painting-frame.frame-5::after {
+            content: '';
+            position: absolute;
+            inset: 5px;
+            border: 1px solid rgba(74,111,165,0.4);
+            z-index: 2;
+            pointer-events: none;
+            box-shadow: inset 0 0 6px rgba(0,0,0,0.15);
+        }
+
+        /* 画框6：彩虹·自画像 — 后印象派漩涡厚涂框 */
+        .wall-painting-frame.frame-6 {
+            border: 5px solid #C4963C;
+            box-shadow:
+                0 8px 24px rgba(50,30,5,0.3),
+                0 2px 8px rgba(0,0,0,0.15),
+                inset 0 0 10px rgba(0,0,0,0.25),
+                0 0 0 3px #E0B84C,
+                0 0 0 7px linear-gradient(135deg, #E8C84C 0%, #D4A838 25%, #C4963C 50%, #E0C050 75%, #C4963C 100%),
+                0 0 0 11px #8A6828,
+                0 0 0 14px linear-gradient(135deg, #C4963C 0%, #A87830 50%, #B88838 100%),
+                0 0 0 18px #6A4E1E;
+            background: #1a1814;
+            border-radius: 2px 2px 1px 1px;
+        }
+        .wall-painting-frame.frame-6::after {
+            content: '';
+            position: absolute;
+            inset: 5px;
+            border: 1px solid rgba(196,150,60,0.6);
+            z-index: 2;
+            pointer-events: none;
+            box-shadow: inset 0 0 8px rgba(0,0,0,0.3);
+        }
+
+        /* 画框内衬金线（通用fallback，被各frame覆盖） */
+        .wall-painting-frame::before {
+            content: '';
+            position: absolute;
+            inset: 4px;
+            border: 1px solid rgba(212,175,92,0.35);
+            z-index: 2;
+            pointer-events: none;
+        }
+        .wall-painting-info {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            margin-top: 10px;
+            text-align: left;
+            max-width: 180px;
+            padding: 8px 10px;
+            background: linear-gradient(135deg, rgba(255,252,245,0.95) 0%, rgba(250,245,235,0.92) 100%);
+            border: 1px solid rgba(200,170,120,0.3);
+            border-radius: 4px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+            font-size: 14px;
+        }
+        /* 博物馆介绍面板装饰角 */
+        .wall-painting-info::before {
+            content: '';
+            position: absolute;
+            top: 3px;
+            left: 3px;
+            width: 8px;
+            height: 8px;
+            border-top: 1.5px solid #C8A860;
+            border-left: 1.5px solid #C8A860;
+        }
+        .wall-painting-info::after {
+            content: '';
+            position: absolute;
+            bottom: 3px;
+            right: 3px;
+            width: 8px;
+            height: 8px;
+            border-bottom: 1.5px solid #C8A860;
+            border-right: 1.5px solid #C8A860;
+        }
+        .wall-painting-title {
+    font-size: 20px;
+    color: #4A4035;
+    font-weight: bold;
+    letter-spacing: 2px;
+    text-shadow: none;
+}
+.wall-painting-desc {
+    font-size: 14px;
+    color: #8A7E70;
+    margin-top: 3px;
+    letter-spacing: 1px;
+    line-height: 1.4;
+}
+.wall-painting-progress {
+    font-size: 12px;
+    color: #B0A898;
+    margin-top: 5px;
+    letter-spacing: 1px;
+}
+
+        /* ===== Molly 站在画前面 ===== */
+        .scene-molly {
+            position: absolute;
+            bottom: 14%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            z-index: 5;
+            cursor: pointer;
+            transition: all 0.4s cubic-bezier(0.23, 1, 0.32, 1);
+            overflow: visible;
+        }
+        .scene-molly img {
+            width: 640px;
+            height: 940px;
+            object-fit: contain;
+            object-position: top center;
+            filter: drop-shadow(2px 4px 8px rgba(0,0,0,0.18));
+            transition: transform 0.3s ease, filter 0.3s ease;
+        }
+        .scene-molly.speaking img {
+            transform: scale(1.1) translateY(-6px);
+            filter: drop-shadow(0 8px 18px rgba(232,119,90,0.3));
+            animation: mollySpeak 0.6s ease-in-out infinite;
+        }
+        @keyframes mollySpeak {
+            0%,100% { transform: scaleX(-1) scale(1.1) translateY(-6px) rotate(0deg); }
+            25% { transform: scaleX(-1) scale(1.1) translateY(-8px) rotate(-1deg); }
+            75% { transform: scaleX(-1) scale(1.1) translateY(-8px) rotate(1deg); }
+        }
+
+        /* 走路弹跳动画 */
+        .scene-molly.walking {
+            z-index: 20 !important;
+        }
+        .scene-molly.walking img {
+            animation: mollyWalk 0.35s ease-in-out infinite !important;
+        }
+        @keyframes mollyWalk {
+            0%,100% { transform: scaleX(-1) translateY(0); }
+            30%      { transform: scaleX(-1) translateY(-9px); }
+            50%      { transform: scaleX(-1) translateY(0); }
+            70%      { transform: scaleX(-1) translateY(-6px); }
+        }
+.scene-molly .scene-name {
+            display: none;
+        }
+        .scene-molly.speaking .scene-name {
+            color: var(--crayon-orange);
+            border-color: var(--crayon-orange);
+            font-weight: bold;
+        }
+
+        /* 画展左右切换箭头 */
+        .gallery-arrow {
+            position: absolute;
+            top: calc(6% + 150px);
+            transform: translateY(-50%);
+            z-index: 10;
+            width: 38px; height: 38px;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.9);
+            border: 2px solid var(--crayon-orange);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 2px 2px 0 var(--shadow);
+            transition: all 0.2s ease;
+            backdrop-filter: blur(4px);
+        }
+        .gallery-arrow:hover {
+            background: rgba(255,248,240,1);
+            box-shadow: 2px 2px 0 rgba(232,119,90,0.2);
+        }
+        .gallery-arrow:active {
+            transform: translateY(-50%) scale(0.88);
+            box-shadow: 0px 0px 0 var(--shadow);
+        }
+        .gallery-arrow.disabled {
+            opacity: 0.25;
+            pointer-events: none;
+            cursor: default;
+        }
+        .gallery-arrow svg {
+            width: 20px; height: 20px;
+            stroke: var(--crayon-orange);
+            stroke-width: 3;
+            fill: none;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+        .gallery-arrow.arrow-left  { left: 8px; }
+        .gallery-arrow.arrow-right { right: 8px; }
+
+        /* 点评气泡列表（左侧固定，从上往下排列） */
+        .chat-bubble-layer {
+            position: absolute;
+            bottom: 20px;
+            left: 0;
+            width: 72%;
+            max-height: 55vh;
+            overflow: hidden;
+            pointer-events: none;
+            z-index: 15;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+            padding: 0 8px;
+            gap: 6px;
+        }
+        .chat-bubble-item {
+            flex-shrink: 0;
+            padding: 6px 12px;
+            border-radius: 16px;
+            font-size: 13px;
+            line-height: 1.5;
+            max-width: 92%;
+            word-break: break-all;
+            box-shadow: 2px 2px 0 rgba(0,0,0,0.08);
+            pointer-events: none;
+            animation: bubbleIn 0.35s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards,
+                       bubbleOut 0.8s ease 5s forwards;
+            opacity: 0;
+            will-change: transform, opacity;
+        }
+        .chat-bubble-name {
+            font-weight: bold;
+            font-size: 11px;
+            margin-right: 3px;
+        }
+        @keyframes bubbleIn {
+            from { opacity: 0; transform: translateX(-12px); }
+            to   { opacity: 1; transform: translateX(0); }
+        }
+        @keyframes bubbleOut {
+            from { opacity: 1; }
+            to   { opacity: 0; }
+        }
+
+        /* 思考中的气泡不被自动淡出 */
+        .chat-bubble-item.thinking {
+            animation: bubbleIn 0.35s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+            opacity: 1;
+        }
+
+        /* 思考跳动点 */
+        .chat-bubble-dots {
+            display: inline-flex; gap: 2px; align-items: flex-end;
+        }
+        .chat-bubble-dots span {
+            font-size: 18px;
+            font-weight: bold;
+            animation: dotBounce 1.4s ease-in-out infinite;
+            line-height: 1;
+        }
+        .chat-bubble-dots span:nth-child(1) { animation-delay: 0s; }
+        .chat-bubble-dots span:nth-child(2) { animation-delay: 0.2s; }
+        .chat-bubble-dots span:nth-child(3) { animation-delay: 0.4s; }
+        @keyframes dotBounce {
+            0%, 80%, 100% { transform: translateY(0); opacity: 0.3; }
+            40% { transform: translateY(-4px); opacity: 1; }
+        }
+
+        /* ========== 全部看完提示栏 ========== */
+        .all-viewed-bar {
+            position: absolute;
+            bottom: 18px;
+            left: 50%;
+            transform: translateX(-50%) translateY(80px);
+            z-index: 30;
+            display: flex;
+            gap: 12px;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.5s ease, transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+        .all-viewed-bar.show {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0);
+            pointer-events: auto;
+        }
+        .all-viewed-btn {
+            background: #D84030;
+            color: #fff;
+            border: none;
+            border-radius: 6px;
+            padding: 12px 24px;
+            font-family: 'ZCOOL KuaiLe', cursive, sans-serif;
+            font-size: 18px;
+            cursor: pointer;
+            box-shadow: 0 4px 0 rgba(168,40,30,0.5);
+            transition: transform 0.15s ease, box-shadow 0.15s ease;
+            white-space: nowrap;
+            letter-spacing: 0.02em;
+        }
+        .all-viewed-btn:active {
+            transform: scale(0.93) translateY(2px);
+            box-shadow: 0 1px 0 rgba(168,40,30,0.5);
+        }
+        .all-viewed-btn--shop {
+            background: #D84030;
+            box-shadow: 0 4px 0 rgba(168,40,30,0.5);
+        }
+        .btn-shop-icon {
+            width: 22px; height: 22px;
+            vertical-align: middle;
+            margin-left: 4px;
+            margin-bottom: 1px;
+        }
+        .btn-palette-icon {
+            width: 22px; height: 22px;
+            vertical-align: middle;
+            margin-left: 4px;
+            margin-bottom: 1px;
+        }
+    </style>
+</head>
+<body>
+    <!-- 左上角导航栏（箭头 + POP MART + Molly） -->
+    <div class="top-bar">
+        <button class="back-btn hidden" id="backBtn" aria-label="返回上一页">
+            <svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
+        </button>
+        <span class="logo-popmart">POP MART</span>
+        <span class="logo-molly">Molly</span>
+    </div>
+
+    <!-- ========== 封面页 ========== -->
+    <div class="page active" id="cover">
+        <div class="cover-wrap">
+            <div class="cover-frame" id="coverFrame">
+                <img src="images/cover.jpg" alt="MOLLY 绘色游园会封面" id="coverImg">
+            </div>
+            <!-- 浮动涂鸦装饰 -->
+            <div class="cover-deco d1"></div>
+            <div class="cover-deco d2"></div>
+            <div class="cover-deco d3"></div>
+            <div class="cover-deco d4"></div>
+            <div class="cover-deco d5">✦</div>
+            <div class="cover-deco d6">◎</div>
+            <div class="cover-deco d7">⁕</div>
+            <div class="cover-tap-hint">
+                <svg viewBox="0 0 24 24"><path d="M12 2a4 4 0 0 1 4 4v4.5l1.5-.5a3 3 0 0 1 3 3v6a5 5 0 0 1-5 5H10a6 6 0 0 1-6-6V6a4 4 0 0 1 4-4h4z"/></svg>
+                点击进入游园会
+            </div>
+        </div>
+    </div>
+
+    <!-- ========== 角色选择页 ========== -->
+    <div class="page" id="selector">
+        <div class="paper-bg">
+            <div class="scribble s1" style="top:8%;left:3%;"></div>
+            <div class="scribble s2" style="top:55%;right:5%;"></div>
+            <div class="scribble s3" style="bottom:20%;left:8%;"></div>
+            <div class="scribble s4" style="top:35%;right:12%;"></div>
+        </div>
+        <!-- POP MART 风浮动涂鸦 -->
+        <div class="pm-deco-layer">
+            <span class="pm-star" style="--dur:4s;--delay:0s;--op:0.22;--fs:18px;top:6%;left:18%;">✦</span>
+            <span class="pm-star" style="--dur:5s;--delay:1s;--op:0.18;--fs:14px;top:15%;right:20%;">✧</span>
+            <span class="pm-heart" style="--dur:3.5s;--delay:0.5s;--op:0.2;--fs:16px;top:22%;left:8%;">♡</span>
+            <span class="pm-heart" style="--dur:4s;--delay:1.5s;--op:0.18;--fs:12px;top:18%;right:10%;">❤</span>
+            <span class="pm-star" style="--dur:6s;--delay:0.3s;--op:0.2;--fs:12px;bottom:30%;left:6%;">⁕</span>
+            <span class="pm-star" style="--dur:5s;--delay:2s;--op:0.18;--fs:20px;bottom:25%;right:8%;">✦</span>
+            <div class="pm-dot" style="--sz:10px;--col:#F2C94C;--dur:5s;--delay:0s;--op:0.3;top:12%;left:40%;"></div>
+            <div class="pm-dot" style="--sz:7px;--col:#E8A0B8;--dur:4s;--delay:1.2s;--op:0.25;top:40%;right:6%;"></div>
+            <div class="pm-dot" style="--sz:9px;--col:#5BAEA0;--dur:6s;--delay:0.8s;--op:0.25;bottom:22%;left:15%;"></div>
+            <div class="pm-ring" style="--sz:28px;--col:#E8775A;--dur:7s;--delay:0s;--op:0.18;top:8%;right:5%;"></div>
+            <div class="pm-ring" style="--sz:20px;--col:#9B8EC7;--dur:9s;--delay:2s;--op:0.15;bottom:28%;left:3%;"></div>
+        </div>
+
+        <h1 class="page-title">Molly带你看画展~</h1>
+        <p class="page-subtitle">左右滑动浏览，点击选择 1~4 个 Molly</p>
+
+        <div class="selector-wrap">
+            <div class="carousel-stage" id="carouselStage">
+                <div class="scroll-hint left" id="hintLeft"><svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg></div>
+                <div class="scroll-hint right" id="hintRight"><svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg></div>
+                <div class="carousel-track" id="carouselTrack">
+                    <!-- 7个Molly卡片由JS生成 -->
+                </div>
+            </div>
+        </div>
+
+        <div class="selection-bar">
+            <div class="sel-dots" id="selDots">
+                <div class="sel-dot"></div><div class="sel-dot"></div><div class="sel-dot"></div><div class="sel-dot"></div>
+            </div>
+            <span class="sel-text">已选 <span class="sel-count" id="selCount">0</span> / 4</span>
+        </div>
+
+        <div class="selected-preview" id="selectedPreview"></div>
+
+        <div class="start-btn-wrap">
+            <button class="start-btn" id="startBtn" disabled>开始</button>
+        </div>
+        <!-- 打招呼气泡 -->
+        <div class="selector-bubble" id="selectorBubble"></div>
+    </div>
+
+    <!-- ========== 画展页 ========== -->
+    <div class="page" id="gallery">
+        <!-- 全屏场景 -->
+        <div class="gallery-scene" id="galleryScene">
+            <div class="wall-bg"></div>
+            <div class="floor-bg"></div>
+            <!-- POP MART 风浮动涂鸦 -->
+            <div class="pm-deco-layer">
+                <span class="pm-star" style="--dur:5s;--delay:0s;--op:0.18;--fs:16px;top:5%;left:5%;">✦</span>
+                <span class="pm-heart" style="--dur:4s;--delay:1s;--op:0.15;--fs:14px;top:8%;right:8%;">♡</span>
+                <div class="pm-dot" style="--sz:8px;--col:#F2C94C;--dur:5s;--delay:0.5s;--op:0.25;top:15%;left:8%;"></div>
+                <div class="pm-dot" style="--sz:6px;--col:#E8A0B8;--dur:6s;--delay:2s;--op:0.2;top:12%;right:12%;"></div>
+                <span class="pm-star" style="--dur:7s;--delay:0.8s;--op:0.15;--fs:11px;top:25%;right:4%;">⁕</span>
+                <div class="pm-ring" style="--sz:22px;--col:#9B8EC7;--dur:8s;--delay:1s;--op:0.15;top:6%;right:22%;"></div>
+            </div>
+
+            <!-- 墙上画作（当前展示） -->
+            <div class="wall-painting" id="wallPainting">
+                <div class="wall-painting-frame" id="wallPaintingFrame"><img id="wallPaintingImg" src="" alt="画作"></div>
+                <div class="wall-painting-info">
+                    <div class="wall-painting-title" id="wallPaintingTitle"></div>
+                    <div class="wall-painting-progress" id="wallPaintingProgress" style="display:none"></div>
+                </div>
+            </div>
+            <!-- 左右切换箭头（独立于画作容器，避免被裁切） -->
+            <button class="gallery-arrow arrow-left" id="galleryArrowLeft">
+                <svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
+            </button>
+            <button class="gallery-arrow arrow-right" id="galleryArrowRight">
+                <svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
+            </button>
+            <!-- Molly 全身人物由 JS 注入（站在画前面） -->
+
+            <!-- 点评气泡列表 -->
+            <div class="chat-bubble-layer" id="chatBubbleLayer"></div>
+
+            <!-- 全部看完提示 -->
+            <div class="all-viewed-bar" id="allViewedBar">
+                <button class="all-viewed-btn" id="btnSeeOther">看看别的画 <svg class="btn-palette-icon" viewBox="0 0 24 24" width="22" height="22"><circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 2a10 10 0 00-6 17.5C8 17 9 14 12 14s4 3 6 5.5A10 10 0 0012 2z" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="8.5" cy="9" r="1.5" fill="currentColor"/><circle cx="14.5" cy="7.5" r="1.5" fill="currentColor"/><circle cx="10" cy="6" r="1" fill="currentColor"/></svg></button>
+                <button class="all-viewed-btn all-viewed-btn--shop" id="btnGoShop">去商城逛逛 <svg class="btn-shop-icon" viewBox="0 0 24 24" width="22" height="22"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4H6zM3 6h18M16 10a4 4 0 01-8 0" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+            </div>
+        </div>
+    </div>
+
+
+    <script>
+    (function() {
+        // ========== 状态 ==========
+        const state = {
+            currentPage: 'cover',
+            selectedIndices: new Set(),
+            carouselIndex: 0, // 默认春芽（第一个）
+            mollyData: [
+                { name: '春芽', file: 'images/molly_01.png' },
+                { name: '青青', file: 'images/molly_02.png' },
+                { name: '达棕', file: 'images/molly_03.png', centerScale: 1.18 },
+                { name: '花花', file: 'images/molly_04.png' },
+                { name: '甜梦', file: 'images/molly_05.png' },
+                { name: '毕红', file: 'images/molly_06.png' },
+                { name: '彩虹', file: 'images/molly_07.png' },
+            ],
+            processedImages: {}, // 缓存抠图结果
+        };
+
+        // ========== DOM 引用 ==========
+        const cover = document.getElementById('cover');
+        const selector = document.getElementById('selector');
+        const backBtn = document.getElementById('backBtn');
+        const coverFrame = document.getElementById('coverFrame');
+        const carouselTrack = document.getElementById('carouselTrack');
+        const carouselStage = document.getElementById('carouselStage');
+        const selCount = document.getElementById('selCount');
+        const selDots = document.getElementById('selDots');
+        const startBtn = document.getElementById('startBtn');
+        const selectedPreview = document.getElementById('selectedPreview');
+        const hintLeft = document.getElementById('hintLeft');
+        const hintRight = document.getElementById('hintRight');
+
+        // ========== 页面切换 ==========
+        function goToPage(page) {
+            state.currentPage = page;
+            document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+            if (page === 'cover') {
+                cover.classList.add('active');
+                backBtn.classList.add('hidden');
+            } else if (page === 'selector') {
+                selector.classList.add('active');
+                backBtn.classList.remove('hidden');
+                renderCarousel();
+                updateSelectionUI();
+            } else if (page === 'gallery') {
+                document.getElementById('gallery').classList.add('active');
+                backBtn.classList.remove('hidden');
+                initGallery();
+            }
+        }
+
+        backBtn.addEventListener('click', () => {
+            if (state.currentPage === 'selector') goToPage('cover');
+            else if (state.currentPage === 'gallery') goToPage('selector');
+        });
+
+        coverFrame.addEventListener('click', () => goToPage('selector'));
+
+        // ========== Canvas 抠图（去除白底） ==========
+        function removeWhiteBackground(src) {
+            return new Promise((resolve) => {
+                const cacheKey = src + '?v=5';
+                if (state.processedImages[cacheKey]) {
+                    resolve(state.processedImages[cacheKey]);
+                    return;
+                }
+                const img = new Image();
+                img.crossOrigin = 'anonymous';
+                img.onload = () => {
+                    const canvas = document.createElement('canvas');
+                    const ctx = canvas.getContext('2d');
+                    canvas.width = img.naturalWidth;
+                    canvas.height = img.naturalHeight;
+                    ctx.drawImage(img, 0, 0);
+                    const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                    const d = imgData.data;
+                    const w = canvas.width;
+                    const h = canvas.height;
+
+                    // 检测图片是否已有透明像素（PNG已抠图的情况）
+                    let hasTransparency = false;
+                    for (let i = 3; i < d.length; i += 4) {
+                        if (d[i] < 250) { hasTransparency = true; break; }
+                    }
+
+                    if (hasTransparency) {
+                        // PNG已有透明背景：用连通区域分析找出人物内部的透明"破洞"填充白色
+                        const SOLID_THRESHOLD = 50;  // alpha>=50 视为实色（人物）
+                        const isSolid = new Uint8Array(w * h);
+                        for (let pi = 0; pi < w * h; pi++) {
+                            if (d[pi * 4 + 3] >= SOLID_THRESHOLD) isSolid[pi] = 1;
+                        }
+
+                        // 标记所有非实色连通区域，区分"外部背景"和"内部破洞"
+                        const visited = new Uint8Array(w * h);
+                        const isBg = new Uint8Array(w * h); // 1=外部背景透明
+
+                        for (let y = 0; y < h; y++) {
+                            for (let x = 0; x < w; x++) {
+                                const start = y * w + x;
+                                if (visited[start] || isSolid[start]) continue;
+
+                                // BFS 探索这个非实色连通区域
+                                const region = [];
+                                const q = [start];
+                                visited[start] = 1;
+                                let touchesEdge = false;
+
+                                let qi = 0;
+                                while (qi < q.length) {
+                                    const pi = q[qi++];
+                                    region.push(pi);
+                                    const px = pi % w, py = (pi - px) / w;
+                                    if (px === 0 || px === w - 1 || py === 0 || py === h - 1) {
+                                        touchesEdge = true;
+                                    }
+                                    // 8连通
+                                    for (let dy = -1; dy <= 1; dy++) {
+                                        for (let dx = -1; dx <= 1; dx++) {
+                                            if (dx === 0 && dy === 0) continue;
+                                            const nx = px + dx, ny = py + dy;
+                                            if (nx < 0 || nx >= w || ny < 0 || ny >= h) continue;
+                                            const ni = ny * w + nx;
+                                            if (!visited[ni] && !isSolid[ni]) {
+                                                visited[ni] = 1;
+                                                q.push(ni);
+                                            }
+                                        }
+                                    }
+                                }
+
+                                // 如果连通区域没有碰到边缘 → 是人物内部的透明破洞
+                                if (!touchesEdge) {
+                                    for (const pi of region) isBg[pi] = 1;
+                                }
+                            }
+                        }
+
+                        // 填充：内部破洞 → 白色不透明（保留外部透明和抗锯齿边缘）
+                        for (let pi = 0; pi < w * h; pi++) {
+                            const ai = pi * 4;
+                            if (isBg[pi]) {
+                                // 仅内部破洞 → 填充白色不透明，保留抗锯齿边缘
+                                d[ai] = 255;
+                                d[ai + 1] = 255;
+                                d[ai + 2] = 255;
+                                d[ai + 3] = 255;
+                            }
+                        }
+
+                        // 形态学膨胀：填充被实色包围的透明像素（修复衣物透明缝隙）
+                        // 如果某个完全透明像素周围有足够多实色邻居，说明它在人物内部
+                        const dilateRadius = 3;
+                        const dilateThreshold = 0.35;
+                        const newFills = [];
+                        for (let y = dilateRadius; y < h - dilateRadius; y++) {
+                            for (let x = dilateRadius; x < w - dilateRadius; x++) {
+                                const pi = y * w + x;
+                                const ai = pi * 4;
+                                if (d[ai + 3] !== 0) continue; // 只处理完全透明像素
+
+                                let solidCount = 0, total = 0;
+                                for (let dy = -dilateRadius; dy <= dilateRadius; dy++) {
+                                    for (let dx = -dilateRadius; dx <= dilateRadius; dx++) {
+                                        if (dx === 0 && dy === 0) continue;
+                                        total++;
+                                        const ni = (y + dy) * w + (x + dx);
+                                        if (isSolid[ni]) solidCount++;
+                                    }
+                                }
+                                if (total > 0 && solidCount / total >= dilateThreshold) {
+                                    newFills.push(pi);
+                                }
+                            }
+                        }
+                        // 批量填充，同时更新 isSolid 以便后续像素参考
+                        for (const pi of newFills) {
+                            const ai = pi * 4;
+                            d[ai] = 255;
+                            d[ai + 1] = 255;
+                            d[ai + 2] = 255;
+                            d[ai + 3] = 255;
+                            isSolid[pi] = 1;
+                        }
+
+                        ctx.putImageData(imgData, 0, 0);
+                        const dataURL = canvas.toDataURL('image/png');
+                        state.processedImages[cacheKey] = dataURL;
+                        resolve(dataURL);
+                        return;
+                    }
+
+                    // 对于无透明通道的图片（JPG/不透明PNG）：连通区域分析
+                    // 从边缘出发BFS，只移除与边缘相连的背景色像素，保留人物内部同色区域（如白色衣物）
+                    let bgR = 0, bgG = 0, bgB = 0, bgSamples = 0;
+                    const sampleEdge = (x, y) => {
+                        const idx = (y * w + x) * 4;
+                        bgR += d[idx]; bgG += d[idx+1]; bgB += d[idx+2]; bgSamples++;
+                    };
+                    for (let x = 0; x < w; x += 2) { sampleEdge(x, 0); sampleEdge(x, h - 1); }
+                    for (let y = 0; y < h; y += 2) { sampleEdge(0, y); sampleEdge(w - 1, y); }
+                    if (bgSamples > 0) {
+                        bgR = Math.round(bgR / bgSamples);
+                        bgG = Math.round(bgG / bgSamples);
+                        bgB = Math.round(bgB / bgSamples);
+                    }
+
+                    // 标记与背景色匹配的像素
+                    const bgThreshold = 28;
+                    const isBgColor = new Uint8Array(w * h);
+                    const isSolidJpg = new Uint8Array(w * h);
+                    for (let pi = 0; pi < w * h; pi++) {
+                        const ai = pi * 4;
+                        const diff = Math.abs(d[ai] - bgR) + Math.abs(d[ai+1] - bgG) + Math.abs(d[ai+2] - bgB);
+                        if (diff < bgThreshold) {
+                            isBgColor[pi] = 1;
+                        } else {
+                            isSolidJpg[pi] = 1;
+                        }
+                    }
+
+                    // BFS 从边缘出发，标记所有与边缘相连的背景色区域 → 移除
+                    const visitedJpg = new Uint8Array(w * h);
+                    for (let y = 0; y < h; y++) {
+                        for (let x = 0; x < w; x++) {
+                            if (x !== 0 && x !== w-1 && y !== 0 && y !== h-1) continue;
+                            const pi = y * w + x;
+                            if (visitedJpg[pi] || !isBgColor[pi]) continue;
+                            const q = [pi]; visitedJpg[pi] = 1;
+                            let qi = 0;
+                            while (qi < q.length) {
+                                const ci = q[qi++];
+                                const ai = ci * 4;
+                                d[ai + 3] = 0;
+                                const cx = ci % w, cy = (ci - cx) / w;
+                                for (let dy = -1; dy <= 1; dy++) {
+                                    for (let dx = -1; dx <= 1; dx++) {
+                                        if (dx === 0 && dy === 0) continue;
+                                        const nx = cx + dx, ny = cy + dy;
+                                        if (nx < 0 || nx >= w || ny < 0 || ny >= h) continue;
+                                        const ni = ny * w + nx;
+                                        if (!visitedJpg[ni] && isBgColor[ni]) {
+                                            visitedJpg[ni] = 1;
+                                            q.push(ni);
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    // 形态学膨胀：填充被实色包围的透明缝隙（加固衣物边缘）
+                    const dilateRad = 3;
+                    const dilateThresh = 0.35;
+                    const newFillsJpg = [];
+                    for (let y = dilateRad; y < h - dilateRad; y++) {
+                        for (let x = dilateRad; x < w - dilateRad; x++) {
+                            const pi = y * w + x;
+                            const ai = pi * 4;
+                            if (d[ai + 3] !== 0) continue;
+                            let solidCount = 0, total = 0;
+                            for (let dy = -dilateRad; dy <= dilateRad; dy++) {
+                                for (let dx = -dilateRad; dx <= dilateRad; dx++) {
+                                    if (dx === 0 && dy === 0) continue;
+                                    total++;
+                                    const ni = (y + dy) * w + (x + dx);
+                                    if (isSolidJpg[ni]) solidCount++;
+                                }
+                            }
+                            if (total > 0 && solidCount / total >= dilateThresh) {
+                                newFillsJpg.push(pi);
+                            }
+                        }
+                    }
+                    for (const pi of newFillsJpg) {
+                        const ai = pi * 4;
+                        d[ai] = 255; d[ai+1] = 255; d[ai+2] = 255; d[ai+3] = 255;
+                    }
+
+                    ctx.putImageData(imgData, 0, 0);
+                    const dataURL = canvas.toDataURL('image/png');
+                    state.processedImages[cacheKey] = dataURL;
+                    resolve(dataURL);
+                };
+                img.onerror = () => resolve(src);
+                img.src = src;
+            });
+        }
+
+        // ========== 生成 Molly 卡片 ==========
+        async function renderCarousel() {
+            carouselTrack.innerHTML = '';
+            for (let i = 0; i < state.mollyData.length; i++) {
+                const data = state.mollyData[i];
+                const card = document.createElement('div');
+                card.className = 'molly-card';
+                card.dataset.index = i;
+
+                const imgWrap = document.createElement('div');
+                imgWrap.className = 'molly-img-wrap';
+
+                const check = document.createElement('div');
+                check.className = 'molly-check';
+                check.innerHTML = '<svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>';
+                imgWrap.appendChild(check);
+
+                const img = document.createElement('img');
+                img.alt = data.name;
+                imgWrap.appendChild(img);
+
+                const name = document.createElement('div');
+                name.className = 'molly-name';
+                name.textContent = data.name;
+
+                card.appendChild(imgWrap);
+                card.appendChild(name);
+                carouselTrack.appendChild(card);
+
+                // 异步处理抠图
+                let cleanSrc = await removeWhiteBackground(data.file);
+
+                img.src = cleanSrc;
+
+                // 点击选中
+                card.addEventListener('click', (e) => {
+                    // 如果正在拖拽则不触发点击
+                    if (Math.abs(dragDeltaX) > 10) return;
+                    toggleSelect(i);
+                });
+            }
+            applyCarouselLayout();
+            // 首次进入选择页，中间角色打招呼
+            showSelectorGreeting(state.carouselIndex);
+        }
+
+        // ========== 圆弧布局 ==========
+        function applyCarouselLayout() {
+            const cards = carouselTrack.querySelectorAll('.molly-card');
+            const count = cards.length;
+            const centerIndex = state.carouselIndex;
+            const stageW = carouselStage.clientWidth;
+
+            // 获取卡片实际宽度
+            const cardW = cards[0] ? cards[0].offsetWidth : 200;
+            const oneThird = cardW / 3;
+
+            cards.forEach((card, i) => {
+                const offset = i - centerIndex;
+                const isSelected = state.selectedIndices.has(i);
+                const isCenter = i === centerIndex;
+
+                // 中间角色呼吸动画标记
+                if (isCenter) card.classList.add('is-center');
+                else card.classList.remove('is-center');
+
+                let tx, sc, op, ry, zi;
+
+                if (offset === 0) {
+                    // 正中间 —— 放大突出视觉中心
+                    const scFactor = state.mollyData[i].centerScale || 1.12;
+                    tx = (stageW - cardW * scFactor) / 2;
+                    sc = scFactor;
+                    op = 1;
+                    ry = 0;
+                    zi = 10;
+                } else if (Math.abs(offset) === 1) {
+                    // 紧邻 —— 只露 1/3 身体
+                    if (offset === 1) {
+                        tx = stageW - oneThird;       // 右边露出左边 1/3
+                    } else {
+                        tx = -(cardW - oneThird);      // 左边露出右边 1/3
+                    }
+                    sc = 0.88;
+                    op = 0.75;
+                    ry = offset * -6;
+                    zi = 5;
+                } else if (Math.abs(offset) === 2) {
+                    // 再远一层 —— 完全被裁掉（overflow:hidden 会在屏幕外）
+                    tx = offset > 0 ? stageW + 20 : -(cardW + 20);
+                    sc = 0.7;
+                    op = 0;
+                    ry = offset * -10;
+                    zi = 1;
+                } else {
+                    // 更远 —— 直接藏到屏幕外
+                    tx = offset > 0 ? stageW + 300 : -(cardW + 300);
+                    sc = 0.6;
+                    op = 0;
+                    ry = 0;
+                    zi = 0;
+                }
+
+                card.style.left = '0';
+                card.style.transform = `translateX(${tx}px) scale(${sc}) rotateY(${ry}deg)`;
+                card.style.zIndex = zi;
+                card.style.opacity = op;
+
+                // 选中状态类
+                if (isSelected) card.classList.add('selected');
+                else card.classList.remove('selected');
+            });
+
+            // 隐藏边缘提示
+            hintLeft.style.opacity = centerIndex <= 0 ? '0' : '0.6';
+            hintLeft.style.pointerEvents = centerIndex <= 0 ? 'none' : 'auto';
+            hintRight.style.opacity = centerIndex >= count - 1 ? '0' : '0.6';
+            hintRight.style.pointerEvents = centerIndex >= count - 1 ? 'none' : 'auto';
+        }
+
+        // ========== 选中逻辑 ==========
+        function toggleSelect(index) {
+            if (state.selectedIndices.has(index)) {
+                state.selectedIndices.delete(index);
+            } else {
+                if (state.selectedIndices.size >= 4) {
+                    // 已满4个，抖动提示
+                    shakeDots();
+                    return;
+                }
+                state.selectedIndices.add(index);
+            }
+            applyCarouselLayout();
+            updateSelectionUI();
+        }
+
+        function shakeDots() {
+            selDots.style.animation = 'none';
+            selDots.offsetHeight; // reflow
+            selDots.style.animation = 'shake 0.4s ease';
+            setTimeout(() => { selDots.style.animation = ''; }, 400);
+        }
+
+        const shakeStyle = document.createElement('style');
+        shakeStyle.textContent = `@keyframes shake { 0%,100%{transform:translateX(0)} 20%{transform:translateX(-6px)} 40%{transform:translateX(6px)} 60%{transform:translateX(-4px)} 80%{transform:translateX(4px)} }`;
+        document.head.appendChild(shakeStyle);
+
+        function updateSelectionUI() {
+            const count = state.selectedIndices.size;
+            selCount.textContent = count;
+
+            // 更新圆点
+            const dots = selDots.querySelectorAll('.sel-dot');
+            dots.forEach((d, i) => {
+                d.classList.toggle('filled', i < count);
+            });
+
+            // 更新按钮
+            startBtn.disabled = count === 0;
+
+            // 更新小预览
+            updatePreview();
+        }
+
+        function updatePreview() {
+            selectedPreview.innerHTML = '';
+            const indices = Array.from(state.selectedIndices);
+            indices.forEach(idx => {
+                const thumb = document.createElement('div');
+                thumb.className = 'preview-thumb visible';
+                const img = document.createElement('img');
+                img.src = state.processedImages[state.mollyData[idx].file + '?v=5'] || state.mollyData[idx].file;
+                thumb.appendChild(img);
+                selectedPreview.appendChild(thumb);
+            });
+        }
+
+        // ========== 拖拽/滑动/滚轮 ==========
+        let isDragging = false;
+        let dragStartX = 0;
+        let dragDeltaX = 0;
+        let startCarouselIndex = 0;
+        let dragThreshold = 60; // 切换一个角色的滑动距离
+
+        // 鼠标滚轮
+        carouselStage.addEventListener('wheel', (e) => {
+            e.preventDefault();
+            if (e.deltaY > 30 || e.deltaX > 30) {
+                scrollCarousel(1);
+            } else if (e.deltaY < -30 || e.deltaX < -30) {
+                scrollCarousel(-1);
+            }
+        }, { passive: false });
+
+        // 触摸/鼠标拖拽
+        function onPointerDown(e) {
+            isDragging = true;
+            dragStartX = e.clientX || (e.touches && e.touches[0].clientX) || 0;
+            startCarouselIndex = state.carouselIndex;
+            dragDeltaX = 0;
+            carouselTrack.style.transition = 'none';
+        }
+        function onPointerMove(e) {
+            if (!isDragging) return;
+            const x = e.clientX || (e.touches && e.touches[0].clientX) || 0;
+            dragDeltaX = x - dragStartX;
+            // 实时跟随（可选，这里做简化只算阈值）
+        }
+        function onPointerUp(e) {
+            if (!isDragging) return;
+            isDragging = false;
+            carouselTrack.style.transition = 'transform 0.4s cubic-bezier(0.23, 1, 0.32, 1)';
+
+            if (Math.abs(dragDeltaX) > dragThreshold) {
+                if (dragDeltaX > 0) scrollCarousel(-1);
+                else scrollCarousel(1);
+            } else {
+                // 没超阈值，回到原位
+                applyCarouselLayout();
+            }
+            dragDeltaX = 0;
+        }
+
+        carouselStage.addEventListener('mousedown', onPointerDown);
+        window.addEventListener('mousemove', onPointerMove);
+        window.addEventListener('mouseup', onPointerUp);
+
+        carouselStage.addEventListener('touchstart', onPointerDown, { passive: true });
+        window.addEventListener('touchmove', onPointerMove, { passive: true });
+        window.addEventListener('touchend', onPointerUp);
+
+        // ========== 每个Molly的打招呼台词 ==========
+        const mollyGreetings = [
+            '嗯？你来看我了啊…才不是因为高兴呢！',   // 春芽
+            '嘿嘿，我就知道你会选我的！(◕‿◕)',        // 青青
+            '哦？是来找本大师鉴赏画展的？可以。',       // 达棕
+            '啊！你终于来啦，我等好久了花花~',          // 花花
+            '嘘…我在做个美梦，你来了也OK啦～zzZ',      // 甜梦
+            '嘿！准备好被我的气势震撼了吗！',            // 毕红
+            '彩虹驾到！今天要画满整个天空！',            // 彩虹
+        ];
+
+        // 每个Molly专属气泡颜色
+        const mollyBubbleColors = [
+            { color: '#8BC34A', shadow: 'rgba(139,195,74,0.25)' },  // 春芽
+            { color: '#4FC3F7', shadow: 'rgba(79,195,247,0.25)' },  // 青青
+            { color: '#A1887F', shadow: 'rgba(161,136,127,0.25)' }, // 达棕
+            { color: '#F48FB1', shadow: 'rgba(244,143,177,0.25)' }, // 花花
+            { color: '#CE93D8', shadow: 'rgba(206,147,216,0.25)' }, // 甜梦
+            { color: '#EF5350', shadow: 'rgba(239,83,80,0.25)' },   // 毕红
+            { color: '#FFB74D', shadow: 'rgba(255,183,77,0.25)' },  // 彩虹
+        ];
+
+        let selectorBubbleTimer = null;
+        const selectorBubbleEl = document.getElementById('selectorBubble');
+
+        function showSelectorGreeting(mollyIdx) {
+            if (!selectorBubbleEl) return;
+            if (selectorBubbleTimer) clearTimeout(selectorBubbleTimer);
+
+            // 只显示说话内容，不显示名字
+            selectorBubbleEl.textContent = mollyGreetings[mollyIdx];
+
+            // 设置专属形状和颜色
+            selectorBubbleEl.dataset.shape = mollyIdx;
+            const bc = mollyBubbleColors[mollyIdx] || { color: '#E8775A', shadow: 'rgba(232,119,90,0.25)' };
+            selectorBubbleEl.style.setProperty('--molly-bubble-color', bc.color);
+            selectorBubbleEl.style.setProperty('--molly-bubble-shadow', bc.shadow);
+            selectorBubbleEl.classList.add('tail-bl');
+
+            // 定位到中间卡片的右上方
+            const centerCard = carouselTrack.querySelector('.molly-card.is-center');
+            if (centerCard) {
+                const rect = centerCard.getBoundingClientRect();
+                // 气泡在卡片右上方，贴近顶部
+                const bTop = Math.max(rect.top - 30, 40);
+                const bLeft = Math.min(rect.right - 30, window.innerWidth - 290);
+                selectorBubbleEl.style.top = bTop + 'px';
+                selectorBubbleEl.style.left = bLeft + 'px';
+                selectorBubbleEl.style.bottom = '';
+                selectorBubbleEl.style.transform = '';
+            }
+
+            selectorBubbleEl.classList.remove('show');
+            requestAnimationFrame(() => {
+                requestAnimationFrame(() => selectorBubbleEl.classList.add('show'));
+            });
+
+            selectorBubbleTimer = setTimeout(() => {
+                selectorBubbleEl.classList.remove('show');
+            }, 2800);
+        }
+
+        function scrollCarousel(dir) {
+            const newIndex = state.carouselIndex + dir;
+            if (newIndex < 0 || newIndex >= state.mollyData.length) return;
+            state.carouselIndex = newIndex;
+            applyCarouselLayout();
+            showSelectorGreeting(newIndex);
+        }
+
+        // 键盘支持
+        document.addEventListener('keydown', (e) => {
+            if (state.currentPage === 'selector') {
+                if (e.key === 'ArrowLeft') scrollCarousel(-1);
+                if (e.key === 'ArrowRight') scrollCarousel(1);
+            } else if (state.currentPage === 'gallery') {
+                if (e.key === 'ArrowLeft') navigatePainting(-1);
+                if (e.key === 'ArrowRight') navigatePainting(1);
+            }
+        });
+
+        // 左右箭头点击切换
+        hintLeft.addEventListener('click', (e) => {
+            e.stopPropagation();
+            if (state.currentPage !== 'selector') return;
+            scrollCarousel(-1);
+        });
+        hintRight.addEventListener('click', (e) => {
+            e.stopPropagation();
+            if (state.currentPage !== 'selector') return;
+            scrollCarousel(1);
+        });
+
+        // ========== 开始按钮 ==========
+        startBtn.addEventListener('click', () => {
+            if (state.selectedIndices.size === 0) return;
+            goToPage('gallery');
+        });
+
+        // ========== 窗口resize重算布局 ==========
+        let resizeTimer;
+        window.addEventListener('resize', () => {
+            clearTimeout(resizeTimer);
+            resizeTimer = setTimeout(() => {
+                if (state.currentPage === 'selector') applyCarouselLayout();
+            }, 150);
+        });
+
+        // ============================================================
+        // =================== 画展页逻辑 ===================
+        // ============================================================
+
+        // 每个角色对应的画作（图片 + 描述 + 专属画框）
+        const paintingsData = [
+            { image: 'images/painting-girl-with-pearl-earring.jpg', title: '戴珍珠耳环的少女', desc: '维米尔经典之作，少女回眸一瞬的永恒', mood: '神秘', ratio: 0.75, frameIdx: 0,
+              comment: '哼，珍珠而已，本Molly戴什么都好看。不过…这幅画确实把我画得很传神，勉强算你有眼光。' },
+            { image: 'images/painting-mona-lisa.jpg', title: '蒙娜丽莎', desc: '达芬奇传世名作，那抹微笑穿越五百年', mood: '优雅', ratio: 0.75, frameIdx: 1,
+              comment: '笑？我才没有在笑。只是这画太无聊了，本小姐保持这个表情很累的。' },
+            { image: 'images/painting-moore-woman.jpg', title: '摩尔女人', desc: '东方神秘面纱下的深邃眼眸', mood: '神秘', ratio: 0.81, frameIdx: 2,
+              comment: '裹这么严实才不是因为怕冷！是…是艺术懂不懂？神秘感！虽然只露出眼睛，但足够让你记住我了。' },
+            { image: 'images/painting-napoleon-alps.jpg', title: '拿破仑翻越阿尔卑斯山', desc: '大卫笔下的英雄气概，红袍白马的壮丽', mood: '豪迈', ratio: 0.82, frameIdx: 3,
+              comment: '马不错，披风也还行。指挥大军小事一桩。这种场面本Molly早就习惯了！' },
+            { image: 'images/painting-the-scream.jpg', title: '呐喊', desc: '蒙克表现主义的惊世之作，扭曲天空下的尖叫', mood: '震撼', ratio: 0.75, frameIdx: 4,
+              comment: '我才没有在害怕！是这个背景太吵了！色彩晃眼...反正不是我被吓到了，是画里的我在表演！演技！懂吗！' },
+            { image: 'images/painting-son-of-man.jpg', title: '人类之子', desc: '马格利特超现实主义经典，青苹果后的谜团', mood: '哲思', ratio: 0.75, frameIdx: 5,
+              comment: '苹果挡脸？不是不想让你看，是看了你也不一定懂。…不过你站这么久，勉强算你有点品味。' },
+            { image: 'images/painting-self-portrait.jpg', title: '自画像', desc: '梵高笔下的自己，燃烧的灵魂与旋转的星空', mood: '炽烈', ratio: 0.75, frameIdx: 6,
+              comment: '烟斗是道具，绷带是造型，别多想。本Molly的忧郁也是设计的一部分。' },
+        ];
+
+        // 根据画的宽高比动态调整画框尺寸 + 切换专属画框样式
+        function resizeFrameForPainting(painting) {
+            const frame = document.getElementById('wallPaintingFrame');
+            const maxH = 300;  // 最大高度
+            const ratio = painting.ratio || 0.75;
+            const w = Math.round(maxH * ratio);
+            const h = maxH;
+            frame.style.width = w + 'px';
+            frame.style.height = h + 'px';
+
+            // 切换专属画框class
+            frame.className = 'wall-painting-frame';
+            if (painting.frameIdx !== undefined) {
+                frame.classList.add('frame-' + painting.frameIdx);
+            }
+        }
+        // 每个角色对应的傲娇点评语库
+        const mollyComments = {
+            0: ['还算勉强入眼啦！', '才不是喜欢，只是客观评价！', '春天的感觉嘛，还行~'],
+            1: ['很灵动嘛，青青勉强承认！', '颜色挺跳跃，和本青青一样！', '还差那么一点点啦。'],
+            2: ['还算有格调，哼！', '棕系配色本来就最高级！', '安静看着也挺好的~'],
+            3: ['确实蛮美！花花承认了。', '粉色系天下最好，不服来辩！', '比花花本人差远了！'],
+            4: ['甜梦觉得这个很甜！', '能有本小姐梦境那么甜吗？', '给60分，不能再高了！'],
+            5: ['热情欠缺！不过颜色还行。', '红色才是最伟大的颜色！', '只有一点点意思啦~'],
+            6: ['挑剔地看了又看…还不错！', '七色才叫好画，差得远！', '光影还有进步空间。'],
+        };
+
+        const galleryState = {
+            activePaintingIdx: 0,
+            paintings: [],
+            mollyList: [],
+            _inputBound: false,
+            _paintingsViewed: {},  // 记录每幅画是否已被看过（按 paintingIdx）
+        };
+
+        // Molly 站位：根据实际数量动态均匀分布，不遮挡
+        function calcScenePositions(count) {
+            const baseW = 640;
+            const baseH = 940;
+
+            let sc;
+            const vh = window.innerHeight;
+            if (count >= 4) {
+                sc = (vh * 0.25) / baseH;
+            } else if (count === 3) {
+                sc = (vh * 0.33) / baseH;
+            } else {
+                const scales = { 1: 0.32, 2: 0.52 };
+                sc = scales[count] || 0.68;
+            }
+
+            // 3人以上大幅重叠，其余正常间距
+            let marginPx;
+            if (count >= 4) marginPx = -Math.round(baseW * sc * 0.35);
+            else if (count === 3) marginPx = -Math.round(baseW * sc * 0.28);
+            else marginPx = 16;
+
+            let finalSc = sc;
+            const vw = window.innerWidth;
+
+            // 只在1/2人时做宽度保护
+            if (count < 3) {
+                const imgW = Math.round(baseW * sc);
+                const totalSpace = imgW * count + marginPx * (count - 1);
+                if (totalSpace > vw * 0.9) {
+                    finalSc = sc * (vw * 0.9) / totalSpace;
+                }
+            }
+
+            const finalImgW = Math.round(baseW * finalSc);
+
+            const positions = [];
+
+            if (count === 1) {
+                const offsetPct = 0.12;
+                const leftPx = vw * offsetPct;
+                positions.push({ leftPx, zBase: 5, sc: finalSc });
+            } else {
+                const startX = (vw - (finalImgW * count + marginPx * (count - 1))) / 2;
+                for (let i = 0; i < count; i++) {
+                    const leftPx = startX + i * (finalImgW + marginPx);
+                    positions.push({ leftPx, zBase: 5, sc: finalSc });
+                }
+            }
+
+            return positions;
+        }
+
+        function initGallery() {
+            galleryState.mollyList = Array.from(state.selectedIndices).sort((a,b)=>a-b);
+            galleryState.paintings = galleryState.mollyList.map(idx => paintingsData[idx]);
+            galleryState.activePaintingIdx = 0;
+            galleryState._paintingsViewed = {}; // 重置已看记录
+
+            // 隐藏全部看完按钮
+            document.getElementById('allViewedBar').classList.remove('show');
+
+            renderSceneMollys();
+
+            // 延迟等DOM渲染完成后再显示画和气泡
+            setTimeout(() => {
+                showPaintingScene(0);
+            }, 350);
+
+            // 绑定事件（只绑一次）
+            if (!galleryState._inputBound) {
+                galleryState._inputBound = true;
+                document.getElementById('galleryArrowLeft').addEventListener('click', () => navigatePainting(-1));
+                document.getElementById('galleryArrowRight').addEventListener('click', () => navigatePainting(1));
+                document.getElementById('btnSeeOther').addEventListener('click', () => goToPage('selector'));
+                document.getElementById('btnGoShop').addEventListener('click', () => {
+                    window.open('https://www.popmart.com.cn', '_blank');
+                });
+            }
+        }
+
+        // 渲染场景中的 Molly（全亮，不暗化）
+        function renderSceneMollys() {
+            const scene = document.getElementById('galleryScene');
+            scene.querySelectorAll('.scene-molly').forEach(el => el.remove());
+
+            const count = galleryState.mollyList.length;
+            const positions = calcScenePositions(count);
+
+            galleryState.mollyList.forEach((mollyIdx, posIdx) => {
+                const pos = positions[posIdx];
+                const mData = state.mollyData[mollyIdx];
+                const el = document.createElement('div');
+                el.className = 'scene-molly';
+                el.dataset.mollyIdx = mollyIdx;
+                el.dataset.posIdx = posIdx;
+
+                el.style.left = pos.leftPx + 'px';
+                el.style.zIndex = pos.zBase;
+                // 1人时往下移
+                if (count === 1) {
+                    el.style.bottom = '8%';
+                }
+                const imgW = Math.round(640 * pos.sc);
+                const imgH = Math.round(940 * pos.sc);
+
+                const img = document.createElement('img');
+                const src = state.processedImages[mData.file + '?v=5'] || mData.file;
+                img.src = src;
+                img.alt = mData.name;
+                img.style.width = imgW + 'px';
+                img.style.height = imgH + 'px';
+                img.style.animationDelay = `${posIdx * 0.38}s`;
+
+                const nameEl = document.createElement('div');
+                nameEl.className = 'scene-name';
+                nameEl.textContent = mData.name;
+
+                // 点击名称 → 弹幕 + 气泡
+                nameEl.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    handleMollyNameClick(mollyIdx, el);
+                });
+
+                el.appendChild(img);
+                el.appendChild(nameEl);
+                scene.appendChild(el);
+            });
+        }
+
+        // 标记正在说话的Molly
+        function markSpeaking(mollyIdx) {
+            document.querySelectorAll('.scene-molly').forEach(el => {
+                el.classList.remove('speaking');
+                if (parseInt(el.dataset.mollyIdx) === mollyIdx) {
+                    el.classList.add('speaking');
+                    setTimeout(() => el.classList.remove('speaking'), 3000);
+                }
+            });
+        }
+
+        // 展示当前画作（带滑动方向）
+        function showPaintingScene(paintIdx, slideDir) {
+            // slideDir: undefined(首次) | 'next'(从右滑入) | 'prev'(从左滑入)
+            const painting = galleryState.paintings[paintIdx];
+            const mollyIdx = galleryState.mollyList[paintIdx];
+            const mData = state.mollyData[mollyIdx];
+
+            const wp = document.getElementById('wallPainting');
+            const sceneW = document.getElementById('galleryScene').clientWidth;
+
+            if (slideDir) {
+                // 有方向 → 滑动切换
+                // 先把当前画滑出到相反方向
+                const outX = slideDir === 'next' ? '-120%' : '120%';
+                const inX  = slideDir === 'next' ? '120%'  : '-120%';
+
+                wp.style.transition = 'all 0.35s cubic-bezier(0.4, 0, 0.2, 1)';
+                wp.style.transform = `translateX(calc(-50% + ${outX}))`;
+                wp.style.opacity = '0';
+
+                setTimeout(() => {
+                    // 更新内容
+                    document.getElementById('wallPaintingImg').src = painting.image;
+                document.getElementById('wallPaintingTitle').textContent = painting.title;
+                document.getElementById('wallPaintingProgress').textContent = '';
+                // 根据画的比例调整画框尺寸
+                resizeFrameForPainting(painting);
+
+                    // 新画从另一侧滑入
+                    wp.style.transition = 'none';
+                    wp.style.transform = `translateX(calc(-50% + ${inX}))`;
+                    wp.style.opacity = '0';
+                    requestAnimationFrame(() => {
+                        wp.style.transition = 'all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94)';
+                        wp.style.transform = 'translateX(-50%)';
+                        wp.style.opacity = '1';
+                    });
+
+                    // Molly 走路 + 点评（每幅画仅首次访问时说话）
+                    const visited = galleryState._paintingsViewed[paintIdx];
+                    const mollyEl = document.querySelector(`.scene-molly[data-molly-idx="${mollyIdx}"]`);
+
+                    // Molly 走路动画：从当前位置偏移 → 走到画前面
+                    if (mollyEl) {
+                        const walkFrom = slideDir === 'next' ? '-25px' : '25px';
+                        mollyEl.classList.remove('speaking');
+                        mollyEl.classList.add('walking');
+                        mollyEl.style.transition = 'none';
+                        mollyEl.style.transform = `translateX(${walkFrom})`;
+                        requestAnimationFrame(() => {
+                            mollyEl.style.transition = 'transform 0.45s cubic-bezier(0.25, 0.46, 0.45, 0.94)';
+                            mollyEl.style.transform = 'translateX(0)';
+                        });
+                        setTimeout(() => {
+                            mollyEl.classList.remove('walking');
+                            mollyEl.style.transition = '';
+                            mollyEl.style.transform = '';
+                            if (!visited) {
+                                const comment = painting.comment || (mollyComments[mollyIdx] || ['哼，这幅画还不错！'])[Math.floor(Math.random() * (mollyComments[mollyIdx] || ['哼，这幅画还不错！']).length)];
+                                showBubble(mData.name, comment, mollyEl);
+                                markSpeaking(mollyIdx);
+                                galleryState._paintingsViewed[paintIdx] = true;
+                                checkAllViewed();
+                            }
+                        }, 480);
+                    }
+                }, 380);
+            } else {
+                // 首次 → 淡入缩放
+                document.getElementById('wallPaintingImg').src = painting.image;
+                document.getElementById('wallPaintingTitle').textContent = painting.title;
+                document.getElementById('wallPaintingProgress').textContent = '';
+                // 根据画的比例调整画框尺寸
+                resizeFrameForPainting(painting);
+
+                wp.style.transform = 'translateX(-50%) scale(0.85)';
+                wp.style.opacity = '0';
+                requestAnimationFrame(() => {
+                    wp.style.transition = 'all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)';
+                    wp.style.transform = 'translateX(-50%) scale(1)';
+                    wp.style.opacity = '1';
+                });
+
+                // 每幅画仅首次访问时说话
+                if (!galleryState._paintingsViewed[paintIdx]) {
+                const comment = painting.comment || (mollyComments[mollyIdx] || ['哼，这幅画还不错！'])[Math.floor(Math.random() * (mollyComments[mollyIdx] || ['哼，这幅画还不错！']).length)];
+                // 延迟一帧确保molly元素已完成布局
+                setTimeout(() => {
+                    const mollyEl = document.querySelector(`.scene-molly[data-molly-idx="${mollyIdx}"]`);
+                    showBubble(mData.name, comment, mollyEl);
+                    markSpeaking(mollyIdx);
+                }, 60);
+                galleryState._paintingsViewed[paintIdx] = true;
+                checkAllViewed();
+                }
+            }
+
+            // 更新箭头状态：首尾边界禁用
+            updateGalleryArrows(paintIdx);
+        }
+
+        function updateGalleryArrows(paintIdx) {
+            const total = galleryState.paintings.length;
+            const arrowL = document.getElementById('galleryArrowLeft');
+            const arrowR = document.getElementById('galleryArrowRight');
+            if (total <= 1) {
+                arrowL.classList.add('disabled');
+                arrowR.classList.add('disabled');
+                return;
+            }
+            arrowL.classList.toggle('disabled', paintIdx <= 0);
+            arrowR.classList.toggle('disabled', paintIdx >= total - 1);
+        }
+
+        // 左右箭头切换画作（不循环，首尾边界停止）
+        function navigatePainting(dir) {
+            const total = galleryState.paintings.length;
+            if (total <= 1) return;
+
+            const newIdx = galleryState.activePaintingIdx + dir;
+            if (newIdx < 0 || newIdx >= total) return; // 边界停止
+
+            galleryState.activePaintingIdx = newIdx;
+            showPaintingScene(newIdx, dir > 0 ? 'next' : 'prev');
+        }
+
+        // 检查是否所有画都已看过，若是则弹出提示按钮
+        function checkAllViewed() {
+            const total = galleryState.paintings.length;
+            if (total === 0) return;
+            const viewedCount = Object.keys(galleryState._paintingsViewed).length;
+            if (viewedCount >= total) {
+                // 等最后的气泡出现 + 说完 + 消失后再弹出按钮（气泡 6s 后移除）
+                setTimeout(() => {
+                    document.getElementById('allViewedBar').classList.add('show');
+                }, 6500);
+            }
+        }
+
+        // 点评气泡颜色映射
+        const bubbleColorMap = {
+            '春芽': { bg: '#E8F5E9', border: '#8BC34A', name: '#558B2F', text: '#33691E' },
+            '青青': { bg: '#E1F5FE', border: '#4FC3F7', name: '#0277BD', text: '#01579B' },
+            '达棕': { bg: '#EFEBE9', border: '#A1887F', name: '#4E342E', text: '#3E2723' },
+            '花花': { bg: '#FCE4EC', border: '#F48FB1', name: '#C2185B', text: '#880E4F' },
+            '甜梦': { bg: '#F3E5F5', border: '#CE93D8', name: '#7B1FA2', text: '#4A148C' },
+            '毕红': { bg: '#FFEBEE', border: '#EF5350', name: '#C62828', text: '#B71C1C' },
+            '彩虹': { bg: '#FFF8E1', border: '#FFB74D', name: '#E65100', text: '#BF360C' },
+        };
+
+        let _bubbleIdCounter = 0;
+
+        function showBubble(name, text, mollyEl, isThinking) {
+            return addChatBubble(name, text, isThinking);
+        }
+
+        function removeBubble(bubbleId) {
+            if (bubbleId == null) return;
+            const el = document.getElementById(bubbleId);
+            if (el) {
+                el.style.transition = 'opacity 0.2s ease, transform 0.2s ease';
+                el.style.opacity = '0';
+                el.style.transform = 'scale(0.8)';
+                setTimeout(() => { if (el.parentNode) el.remove(); }, 250);
+            }
+        }
+
+        function addChatBubble(name, text, isThinking) {
+            const layer = document.getElementById('chatBubbleLayer');
+            if (!layer) return null;
+            const colors = bubbleColorMap[name] || { bg: '#FFF3E0', border: '#E8775A', name: '#D4684B', text: '#555' };
+
+            const item = document.createElement('div');
+            item.className = 'chat-bubble-item';
+            item.style.background = colors.bg;
+            item.style.border = '1.5px solid ' + colors.border;
+            item.style.color = colors.text;
+
+            const nameSpan = document.createElement('span');
+            nameSpan.className = 'chat-bubble-name';
+            nameSpan.style.color = colors.name;
+            nameSpan.textContent = name + '：';
+            const textSpan = document.createElement('span');
+            textSpan.textContent = text;
+
+            item.appendChild(nameSpan);
+            item.appendChild(textSpan);
+
+            if (isThinking) {
+                item.classList.add('thinking');
+                const dotsEl = document.createElement('span');
+                dotsEl.className = 'chat-bubble-dots';
+                dotsEl.innerHTML = '<span>.</span><span>.</span><span>.</span>';
+                textSpan.textContent = '';
+                textSpan.appendChild(dotsEl);
+            }
+
+            const bubbleId = 'bubble-' + (++_bubbleIdCounter);
+            item.id = bubbleId;
+            layer.appendChild(item);
+
+            if (!isThinking) {
+                setTimeout(() => { if (item.parentNode) item.remove(); }, 6000);
+            }
+
+            return bubbleId;
+        }
+
+        // 点击Molly名称
+        function handleMollyNameClick(mollyIdx, mollyEl) {
+            const mData = state.mollyData[mollyIdx];
+            const comments = mollyComments[mollyIdx] || ['哼，我在呢！'];
+            const extraLines = ['你点我干嘛…', '再看收钱！开玩笑的。', '叫我？听着呢。', '戳一下说一句！'];
+            const allLines = [...comments, ...extraLines];
+            const line = allLines[Math.floor(Math.random() * allLines.length)];
+            showBubble(mData.name, line, mollyEl);
+            markSpeaking(mollyIdx);
+        }
+
+    })();
+    </script>
+</body>
+</html>
