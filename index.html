@@ -2251,96 +2251,120 @@
             const mData = state.mollyData[mollyIdx];
 
             const wp = document.getElementById('wallPainting');
-            const sceneW = document.getElementById('galleryScene').clientWidth;
+            const newImg = document.getElementById('wallPaintingImg');
+
+            // 更新内容（在动画开始前或不透明度为0时更新，避免闪旧图）
+            function updateContent() {
+                newImg.src = painting.image;
+                document.getElementById('wallPaintingTitle').textContent = painting.title;
+                document.getElementById('wallPaintingProgress').textContent = '';
+                resizeFrameForPainting(painting);
+            }
+
+            // 等图片加载完成后执行回调
+            function waitForImage(callback, timeoutMs) {
+                if (newImg.complete && newImg.naturalWidth > 0) {
+                    callback();
+                } else {
+                    var fired = false;
+                    newImg.onload = function() { if (!fired) { fired = true; callback(); } };
+                    newImg.onerror = function() { if (!fired) { fired = true; callback(); } };
+                    // 兜底超时，避免卡死
+                    if (timeoutMs) setTimeout(function() { if (!fired) { fired = true; callback(); } }, timeoutMs);
+                }
+            }
+
+            // Molly 走路 + 点评
+            function triggerMollyWalk() {
+                const visited = galleryState._paintingsViewed[paintIdx];
+                const mollyEl = document.querySelector(`.scene-molly[data-molly-idx="${mollyIdx}"]`);
+                if (!mollyEl) return;
+
+                const walkFrom = (slideDir === 'next') ? '-25px' : (slideDir === 'prev' ? '25px' : '0px');
+                mollyEl.classList.remove('speaking');
+                if (walkFrom !== '0px') {
+                    mollyEl.classList.add('walking');
+                    mollyEl.style.transition = 'none';
+                    mollyEl.style.transform = `translateX(${walkFrom})`;
+                    requestAnimationFrame(() => {
+                        mollyEl.style.transition = 'transform 0.45s cubic-bezier(0.25, 0.46, 0.45, 0.94)';
+                        mollyEl.style.transform = 'translateX(0)';
+                    });
+                }
+                setTimeout(() => {
+                    mollyEl.classList.remove('walking');
+                    mollyEl.style.transition = '';
+                    mollyEl.style.transform = '';
+                    if (!visited) {
+                        const comment = painting.comment || (mollyComments[mollyIdx] || ['哼，这幅画还不错！'])[Math.floor(Math.random() * (mollyComments[mollyIdx] || ['哼，这幅画还不错！']).length)];
+                        showBubble(mData.name, comment, mollyEl);
+                        markSpeaking(mollyIdx);
+                        galleryState._paintingsViewed[paintIdx] = true;
+                        checkAllViewed();
+                    }
+                }, 480);
+            }
 
             if (slideDir) {
-                // 有方向 → 滑动切换
-                // 先把当前画滑出到相反方向
+                // ========== 滑动切换 ==========
                 const outX = slideDir === 'next' ? '-120%' : '120%';
                 const inX  = slideDir === 'next' ? '120%'  : '-120%';
 
+                // Step 1: 滑出当前画
                 wp.style.transition = 'all 0.35s cubic-bezier(0.4, 0, 0.2, 1)';
                 wp.style.transform = `translateX(calc(-50% + ${outX}))`;
                 wp.style.opacity = '0';
 
                 setTimeout(() => {
-                    // 更新内容
-                    document.getElementById('wallPaintingImg').src = painting.image;
-                document.getElementById('wallPaintingTitle').textContent = painting.title;
-                document.getElementById('wallPaintingProgress').textContent = '';
-                // 根据画的比例调整画框尺寸
-                resizeFrameForPainting(painting);
+                    // Step 2: 在不可见状态下更新内容
+                    updateContent();
 
-                    // 新画从另一侧滑入
+                    // Step 3: 放到滑入起始位置
                     wp.style.transition = 'none';
                     wp.style.transform = `translateX(calc(-50% + ${inX}))`;
                     wp.style.opacity = '0';
-                    requestAnimationFrame(() => {
-                        wp.style.transition = 'all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94)';
-                        wp.style.transform = 'translateX(-50%)';
-                        wp.style.opacity = '1';
-                    });
 
-                    // Molly 走路 + 点评（每幅画仅首次访问时说话）
-                    const visited = galleryState._paintingsViewed[paintIdx];
-                    const mollyEl = document.querySelector(`.scene-molly[data-molly-idx="${mollyIdx}"]`);
-
-                    // Molly 走路动画：从当前位置偏移 → 走到画前面
-                    if (mollyEl) {
-                        const walkFrom = slideDir === 'next' ? '-25px' : '25px';
-                        mollyEl.classList.remove('speaking');
-                        mollyEl.classList.add('walking');
-                        mollyEl.style.transition = 'none';
-                        mollyEl.style.transform = `translateX(${walkFrom})`;
+                    // Step 4: 等新图片加载完成后再滑入
+                    waitForImage(() => {
                         requestAnimationFrame(() => {
-                            mollyEl.style.transition = 'transform 0.45s cubic-bezier(0.25, 0.46, 0.45, 0.94)';
-                            mollyEl.style.transform = 'translateX(0)';
+                            wp.style.transition = 'all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94)';
+                            wp.style.transform = 'translateX(-50%)';
+                            wp.style.opacity = '1';
                         });
-                        setTimeout(() => {
-                            mollyEl.classList.remove('walking');
-                            mollyEl.style.transition = '';
-                            mollyEl.style.transform = '';
-                            if (!visited) {
-                                const comment = painting.comment || (mollyComments[mollyIdx] || ['哼，这幅画还不错！'])[Math.floor(Math.random() * (mollyComments[mollyIdx] || ['哼，这幅画还不错！']).length)];
-                                showBubble(mData.name, comment, mollyEl);
-                                markSpeaking(mollyIdx);
-                                galleryState._paintingsViewed[paintIdx] = true;
-                                checkAllViewed();
-                            }
-                        }, 480);
-                    }
+                    }, 2000);
+
+                    // Molly 走路不受图片加载影响，并行执行
+                    triggerMollyWalk();
                 }, 380);
             } else {
-                // 首次 → 淡入缩放
-                document.getElementById('wallPaintingImg').src = painting.image;
-                document.getElementById('wallPaintingTitle').textContent = painting.title;
-                document.getElementById('wallPaintingProgress').textContent = '';
-                // 根据画的比例调整画框尺寸
-                resizeFrameForPainting(painting);
+                // ========== 首次展示 ==========
+                updateContent();
 
                 wp.style.transform = 'translateX(-50%) scale(0.85)';
                 wp.style.opacity = '0';
-                requestAnimationFrame(() => {
-                    wp.style.transition = 'all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)';
-                    wp.style.transform = 'translateX(-50%) scale(1)';
-                    wp.style.opacity = '1';
-                });
+
+                waitForImage(() => {
+                    requestAnimationFrame(() => {
+                        wp.style.transition = 'all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)';
+                        wp.style.transform = 'translateX(-50%) scale(1)';
+                        wp.style.opacity = '1';
+                    });
+                }, 2000);
 
                 // 每幅画仅首次访问时说话
                 if (!galleryState._paintingsViewed[paintIdx]) {
-                const comment = painting.comment || (mollyComments[mollyIdx] || ['哼，这幅画还不错！'])[Math.floor(Math.random() * (mollyComments[mollyIdx] || ['哼，这幅画还不错！']).length)];
-                // 延迟一帧确保molly元素已完成布局
-                setTimeout(() => {
-                    const mollyEl = document.querySelector(`.scene-molly[data-molly-idx="${mollyIdx}"]`);
-                    showBubble(mData.name, comment, mollyEl);
-                    markSpeaking(mollyIdx);
-                }, 60);
-                galleryState._paintingsViewed[paintIdx] = true;
-                checkAllViewed();
+                    const comment = painting.comment || (mollyComments[mollyIdx] || ['哼，这幅画还不错！'])[Math.floor(Math.random() * (mollyComments[mollyIdx] || ['哼，这幅画还不错！']).length)];
+                    setTimeout(() => {
+                        const mollyEl = document.querySelector(`.scene-molly[data-molly-idx="${mollyIdx}"]`);
+                        showBubble(mData.name, comment, mollyEl);
+                        markSpeaking(mollyIdx);
+                    }, 60);
+                    galleryState._paintingsViewed[paintIdx] = true;
+                    checkAllViewed();
                 }
             }
 
-            // 更新箭头状态：首尾边界禁用
+            // 更新箭头状态
             updateGalleryArrows(paintIdx);
         }
 
