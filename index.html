@@ -2082,7 +2082,7 @@
             positionInfoPanel();
         }
 
-        // 信息牌定位：画框左下方（最左侧与画框最左侧对齐）
+        // 信息牌定位：画框正下方，左对齐画框左边
         function positionInfoPanel() {
             const infoPanel = document.getElementById('wallPaintingInfo');
             const frame = document.getElementById('wallPaintingFrame');
@@ -2090,9 +2090,9 @@
             if (!infoPanel || !frame || !scene) return;
             const frameRect = frame.getBoundingClientRect();
             const sceneRect = scene.getBoundingClientRect();
-            // 信息框底边对齐画框底边，左边完全对齐画框左边
-            infoPanel.style.top = '';
-            infoPanel.style.bottom = (sceneRect.bottom - frameRect.bottom + 8) + 'px';
+            // 信息框在画框正下方，左边缘对齐画框左边缘
+            infoPanel.style.top = (frameRect.bottom - sceneRect.top + 10) + 'px';
+            infoPanel.style.bottom = '';
             infoPanel.style.left = (frameRect.left - sceneRect.left) + 'px';
             infoPanel.style.maxWidth = Math.min(180, frameRect.width) + 'px';
         }
