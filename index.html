@@ -4,24 +4,19 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>MOLLY 绘色游园会</title>
-    <!-- 预加载所有图片，浏览器第一时间开始下载 -->
+    <!-- 资源提示：加速DNS解析和连接 -->
+    <link rel="dns-prefetch" href="https://gillian33.github.io">
+    <link rel="preconnect" href="https://gillian33.github.io" crossorigin>
+    <link rel="dns-prefetch" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <!-- 只预加载首屏关键图片 -->
     <link rel="preload" as="image" href="images/cover.webp">
-    <link rel="preload" as="image" href="images/molly_01.webp">
-    <link rel="preload" as="image" href="images/molly_02.webp">
-    <link rel="preload" as="image" href="images/molly_03.webp">
-    <link rel="preload" as="image" href="images/molly_04.webp">
-    <link rel="preload" as="image" href="images/molly_05.webp">
-    <link rel="preload" as="image" href="images/molly_06.webp">
-    <link rel="preload" as="image" href="images/molly_07.webp">
-    <link rel="preload" as="image" href="images/painting-girl-with-pearl-earring.webp">
-    <link rel="preload" as="image" href="images/painting-mona-lisa.webp">
-    <link rel="preload" as="image" href="images/painting-moore-woman.webp">
-    <link rel="preload" as="image" href="images/painting-napoleon-alps.webp">
-    <link rel="preload" as="image" href="images/painting-the-scream.webp">
-    <link rel="preload" as="image" href="images/painting-son-of-man.webp">
-    <link rel="preload" as="image" href="images/painting-self-portrait.webp">
+    <!-- 异步加载字体 -->
+    <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=ZCOOL+KuaiLe&display=swap">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=ZCOOL+KuaiLe&display=swap" media="print" onload="this.media='all'">
+    <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=ZCOOL+KuaiLe&display=swap"></noscript>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=ZCOOL+KuaiLe&display=swap');
         * { margin: 0; padding: 0; box-sizing: border-box; }
 
         :root {
@@ -517,7 +512,7 @@
         /* 选中勾选标记 */
         .molly-check {
             position: absolute;
-            top: 8px; right: 6px;
+            top: 8px; right: 14px;
             width: 30px; height: 30px;
             background: var(--crayon-orange);
             border-radius: 50%;
@@ -1002,7 +997,7 @@
         .wall-painting-info {
             position: absolute;
             z-index: 20;
-            /* top/left 由 JS 动态设置 */
+            /* bottom/left 由 JS 动态设置（统一在画的左下方） */
             text-align: left;
             max-width: 180px;
             padding: 8px 10px;
@@ -1012,6 +1007,7 @@
             box-shadow: 0 2px 8px rgba(0,0,0,0.06);
             font-size: 14px;
             pointer-events: none;
+            transition: bottom 0.4s cubic-bezier(0.34, 1.56, 0.64, 1), left 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
         }
         /* 博物馆介绍面板装饰角 */
         .wall-painting-info::before {
@@ -1404,22 +1400,6 @@
 
     <script>
     (function() {
-        // ========== 预加载所有图片（立即开始下载） ==========
-        const ALL_IMAGE_PATHS = [
-            'images/cover.webp',
-            'images/molly_01.webp', 'images/molly_02.webp', 'images/molly_03.webp',
-            'images/molly_04.webp', 'images/molly_05.webp', 'images/molly_06.webp', 'images/molly_07.webp',
-            'images/painting-girl-with-pearl-earring.webp', 'images/painting-mona-lisa.webp',
-            'images/painting-moore-woman.webp', 'images/painting-napoleon-alps.webp',
-            'images/painting-the-scream.webp', 'images/painting-son-of-man.webp',
-            'images/painting-self-portrait.webp',
-        ];
-        // 立即创建Image对象开始下载（不阻塞渲染）
-        ALL_IMAGE_PATHS.forEach(function(src) {
-            var img = new Image();
-            img.src = src;
-        });
-
         // ========== 状态 ==========
         const state = {
             currentPage: 'cover',
@@ -1475,7 +1455,14 @@
             else if (state.currentPage === 'gallery') goToPage('selector');
         });
 
-        coverFrame.addEventListener('click', () => goToPage('selector'));
+        coverFrame.addEventListener('click', () => {
+            // 开始预加载 Molly 图片（不阻塞页面切换）
+            ['images/molly_01.webp','images/molly_02.webp','images/molly_03.webp',
+             'images/molly_04.webp','images/molly_05.webp','images/molly_06.webp','images/molly_07.webp'].forEach(function(s){
+                var img = new Image(); img.src = s;
+            });
+            goToPage('selector');
+        });
 
         // ========== Canvas 抠图（去除白底） ==========
         function removeWhiteBackground(src) {
@@ -2095,7 +2082,7 @@
             positionInfoPanel();
         }
 
-        // 信息牌定位：画框正下方，z-index 高于 Molly
+        // 信息牌定位：画框左下方（最左侧与画框最左侧对齐）
         function positionInfoPanel() {
             const infoPanel = document.getElementById('wallPaintingInfo');
             const frame = document.getElementById('wallPaintingFrame');
@@ -2103,7 +2090,9 @@
             if (!infoPanel || !frame || !scene) return;
             const frameRect = frame.getBoundingClientRect();
             const sceneRect = scene.getBoundingClientRect();
-            infoPanel.style.top = (frameRect.bottom - sceneRect.top + 10) + 'px';
+            // 信息框底边对齐画框底边，左边完全对齐画框左边
+            infoPanel.style.top = '';
+            infoPanel.style.bottom = (sceneRect.bottom - frameRect.bottom + 8) + 'px';
             infoPanel.style.left = (frameRect.left - sceneRect.left) + 'px';
             infoPanel.style.maxWidth = Math.min(180, frameRect.width) + 'px';
         }
@@ -2360,6 +2349,8 @@
                             wp.style.transition = 'all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94)';
                             wp.style.transform = 'translateX(-50%)';
                             wp.style.opacity = '1';
+                            // 动画完成后重新定位信息框
+                            setTimeout(() => positionInfoPanel(), 450);
                         });
                     }, 2000);
 
@@ -2378,6 +2369,8 @@
                         wp.style.transition = 'all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)';
                         wp.style.transform = 'translateX(-50%) scale(1)';
                         wp.style.opacity = '1';
+                        // 动画完成后重新定位信息框
+                        setTimeout(() => positionInfoPanel(), 450);
                     });
                 }, 2000);
 
