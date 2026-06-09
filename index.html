@@ -4,6 +4,22 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>MOLLY 绘色游园会</title>
+    <!-- 预加载所有图片，浏览器第一时间开始下载 -->
+    <link rel="preload" as="image" href="images/cover.webp">
+    <link rel="preload" as="image" href="images/molly_01.webp">
+    <link rel="preload" as="image" href="images/molly_02.webp">
+    <link rel="preload" as="image" href="images/molly_03.webp">
+    <link rel="preload" as="image" href="images/molly_04.webp">
+    <link rel="preload" as="image" href="images/molly_05.webp">
+    <link rel="preload" as="image" href="images/molly_06.webp">
+    <link rel="preload" as="image" href="images/molly_07.webp">
+    <link rel="preload" as="image" href="images/painting-girl-with-pearl-earring.webp">
+    <link rel="preload" as="image" href="images/painting-mona-lisa.webp">
+    <link rel="preload" as="image" href="images/painting-moore-woman.webp">
+    <link rel="preload" as="image" href="images/painting-napoleon-alps.webp">
+    <link rel="preload" as="image" href="images/painting-the-scream.webp">
+    <link rel="preload" as="image" href="images/painting-son-of-man.webp">
+    <link rel="preload" as="image" href="images/painting-self-portrait.webp">
     <style>
         @import url('https://fonts.googleapis.com/css2?family=ZCOOL+KuaiLe&display=swap');
         * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -1386,6 +1402,22 @@
 
     <script>
     (function() {
+        // ========== 预加载所有图片（立即开始下载） ==========
+        const ALL_IMAGE_PATHS = [
+            'images/cover.webp',
+            'images/molly_01.webp', 'images/molly_02.webp', 'images/molly_03.webp',
+            'images/molly_04.webp', 'images/molly_05.webp', 'images/molly_06.webp', 'images/molly_07.webp',
+            'images/painting-girl-with-pearl-earring.webp', 'images/painting-mona-lisa.webp',
+            'images/painting-moore-woman.webp', 'images/painting-napoleon-alps.webp',
+            'images/painting-the-scream.webp', 'images/painting-son-of-man.webp',
+            'images/painting-self-portrait.webp',
+        ];
+        // 立即创建Image对象开始下载（不阻塞渲染）
+        ALL_IMAGE_PATHS.forEach(function(src) {
+            var img = new Image();
+            img.src = src;
+        });
+
         // ========== 状态 ==========
         const state = {
             currentPage: 'cover',
