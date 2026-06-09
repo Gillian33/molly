@@ -2201,9 +2201,11 @@
 
                 el.style.left = pos.leftPx + 'px';
                 el.style.zIndex = pos.zBase;
-                // 1人时往下移
+                // 1人时往下移；4人及以上往上移
                 if (count === 1) {
                     el.style.bottom = '4%';
+                } else if (count >= 4) {
+                    el.style.bottom = '12%';
                 }
                 const imgW = Math.round(640 * pos.sc);
                 const imgH = Math.round(940 * pos.sc);
