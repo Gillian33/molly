@@ -1270,7 +1270,7 @@
     <div class="page active" id="cover">
         <div class="cover-wrap">
             <div class="cover-frame" id="coverFrame">
-                <img src="images/cover.jpg" alt="MOLLY 绘色游园会封面" id="coverImg">
+                <img src="images/cover.webp" alt="MOLLY 绘色游园会封面" id="coverImg" loading="eager">
             </div>
             <!-- 浮动涂鸦装饰 -->
             <div class="cover-deco d1"></div>
@@ -1392,13 +1392,13 @@
             selectedIndices: new Set(),
             carouselIndex: 0, // 默认春芽（第一个）
             mollyData: [
-                { name: '春芽', file: 'images/molly_01.png' },
-                { name: '青青', file: 'images/molly_02.png' },
-                { name: '达棕', file: 'images/molly_03.png', centerScale: 1.18 },
-                { name: '花花', file: 'images/molly_04.png' },
-                { name: '甜梦', file: 'images/molly_05.png' },
-                { name: '毕红', file: 'images/molly_06.png' },
-                { name: '彩虹', file: 'images/molly_07.png' },
+                { name: '春芽', file: 'images/molly_01.webp' },
+                { name: '青青', file: 'images/molly_02.webp' },
+                { name: '达棕', file: 'images/molly_03.webp', centerScale: 1.18 },
+                { name: '花花', file: 'images/molly_04.webp' },
+                { name: '甜梦', file: 'images/molly_05.webp' },
+                { name: '毕红', file: 'images/molly_06.webp' },
+                { name: '彩虹', file: 'images/molly_07.webp' },
             ],
             processedImages: {}, // 缓存抠图结果
         };
@@ -2019,19 +2019,19 @@
 
         // 每个角色对应的画作（图片 + 描述 + 专属画框）
         const paintingsData = [
-            { image: 'images/painting-girl-with-pearl-earring.jpg', title: '戴珍珠耳环的少女', desc: '维米尔经典之作，少女回眸一瞬的永恒', mood: '神秘', ratio: 0.75, frameIdx: 0,
+            { image: 'images/painting-girl-with-pearl-earring.webp', title: '戴珍珠耳环的少女', desc: '维米尔经典之作，少女回眸一瞬的永恒', mood: '神秘', ratio: 0.75, frameIdx: 0,
               comment: '哼，珍珠而已，本Molly戴什么都好看。不过…这幅画确实把我画得很传神，勉强算你有眼光。' },
-            { image: 'images/painting-mona-lisa.jpg', title: '蒙娜丽莎', desc: '达芬奇传世名作，那抹微笑穿越五百年', mood: '优雅', ratio: 0.75, frameIdx: 1,
+            { image: 'images/painting-mona-lisa.webp', title: '蒙娜丽莎', desc: '达芬奇传世名作，那抹微笑穿越五百年', mood: '优雅', ratio: 0.75, frameIdx: 1,
               comment: '笑？我才没有在笑。只是这画太无聊了，本小姐保持这个表情很累的。' },
-            { image: 'images/painting-moore-woman.jpg', title: '摩尔女人', desc: '东方神秘面纱下的深邃眼眸', mood: '神秘', ratio: 0.81, frameIdx: 2,
+            { image: 'images/painting-moore-woman.webp', title: '摩尔女人', desc: '东方神秘面纱下的深邃眼眸', mood: '神秘', ratio: 0.81, frameIdx: 2,
               comment: '裹这么严实才不是因为怕冷！是…是艺术懂不懂？神秘感！虽然只露出眼睛，但足够让你记住我了。' },
-            { image: 'images/painting-napoleon-alps.jpg', title: '拿破仑翻越阿尔卑斯山', desc: '大卫笔下的英雄气概，红袍白马的壮丽', mood: '豪迈', ratio: 0.82, frameIdx: 3,
+            { image: 'images/painting-napoleon-alps.webp', title: '拿破仑翻越阿尔卑斯山', desc: '大卫笔下的英雄气概，红袍白马的壮丽', mood: '豪迈', ratio: 0.82, frameIdx: 3,
               comment: '马不错，披风也还行。指挥大军小事一桩。这种场面本Molly早就习惯了！' },
-            { image: 'images/painting-the-scream.jpg', title: '呐喊', desc: '蒙克表现主义的惊世之作，扭曲天空下的尖叫', mood: '震撼', ratio: 0.75, frameIdx: 4,
+            { image: 'images/painting-the-scream.webp', title: '呐喊', desc: '蒙克表现主义的惊世之作，扭曲天空下的尖叫', mood: '震撼', ratio: 0.75, frameIdx: 4,
               comment: '我才没有在害怕！是这个背景太吵了！色彩晃眼...反正不是我被吓到了，是画里的我在表演！演技！懂吗！' },
-            { image: 'images/painting-son-of-man.jpg', title: '人类之子', desc: '马格利特超现实主义经典，青苹果后的谜团', mood: '哲思', ratio: 0.75, frameIdx: 5,
+            { image: 'images/painting-son-of-man.webp', title: '人类之子', desc: '马格利特超现实主义经典，青苹果后的谜团', mood: '哲思', ratio: 0.75, frameIdx: 5,
               comment: '苹果挡脸？不是不想让你看，是看了你也不一定懂。…不过你站这么久，勉强算你有点品味。' },
-            { image: 'images/painting-self-portrait.jpg', title: '自画像', desc: '梵高笔下的自己，燃烧的灵魂与旋转的星空', mood: '炽烈', ratio: 0.75, frameIdx: 6,
+            { image: 'images/painting-self-portrait.webp', title: '自画像', desc: '梵高笔下的自己，燃烧的灵魂与旋转的星空', mood: '炽烈', ratio: 0.75, frameIdx: 6,
               comment: '烟斗是道具，绷带是造型，别多想。本Molly的忧郁也是设计的一部分。' },
         ];
 
